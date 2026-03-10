@@ -80,6 +80,9 @@ Key fields:
 - `DJANGO_ALLOWED_HOSTS`
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT`
 - `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL`, `DJANGO_SUPERUSER_PASSWORD`
+- `APT_MIRROR` (optional, default `mirrors.tuna.tsinghua.edu.cn`)
+- `PIP_INDEX_URL` (optional, default `https://pypi.tuna.tsinghua.edu.cn/simple`)
+- `PIP_TRUSTED_HOST` (optional, default `pypi.tuna.tsinghua.edu.cn`)
 
 Superuser is created automatically on container bootstrap if all 3 superuser env vars are provided.
 
