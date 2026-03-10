@@ -53,6 +53,18 @@ booking_demo/
 
 ## Quick Start
 
-For full startup and deployment instructions, see:
+One-command init (prefer Podman, fallback Docker, auto-install if missing):
+
+```bash
+sh ./init-stack.sh
+```
+
+Force Podman runtime:
+
+```bash
+sh ./init-stack.sh --runtime=podman
+```
+
+For full startup and deployment details, see:
 
 - [Setup Guide](docs/setup.md)
