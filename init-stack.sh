@@ -418,6 +418,33 @@ ensure_env_file() {
   exit 1
 }
 
+load_env_vars() {
+  if [ -f "$ROOT_DIR/.env" ]; then
+    set -a
+    . "$ROOT_DIR/.env"
+    set +a
+  fi
+}
+
+detect_access_host() {
+  ACCESS_HOST="localhost"
+  if has_cmd hostname; then
+    HOST_IPS=$(hostname -I 2>/dev/null || true)
+    if [ -n "$HOST_IPS" ]; then
+      for ip in $HOST_IPS; do
+        case "$ip" in
+          127.*|169.254.*)
+            ;;
+          *)
+            ACCESS_HOST="$ip"
+            return
+            ;;
+        esac
+      done
+    fi
+  fi
+}
+
 ensure_docker_ready() {
   OS_NAME=$(detect_os)
   if [ "$OS_NAME" != "linux" ]; then
@@ -636,10 +663,71 @@ run_compose_up() {
   esac
 }
 
+show_compose_status() {
+  BASE_FILE="$ROOT_DIR/docker-compose.yml"
+  TUNED_FILE="$ROOT_DIR/docker-compose.2c4g.yml"
+
+  case "$COMPOSE_KIND" in
+    podman_compose)
+      if [ -f "$TUNED_FILE" ]; then
+        podman compose -f "$BASE_FILE" -f "$TUNED_FILE" ps || true
+      else
+        podman compose -f "$BASE_FILE" ps || true
+      fi
+      ;;
+    podman-compose)
+      if [ -f "$TUNED_FILE" ]; then
+        podman-compose -f "$BASE_FILE" -f "$TUNED_FILE" ps || true
+      else
+        podman-compose -f "$BASE_FILE" ps || true
+      fi
+      ;;
+    docker_compose)
+      if [ -f "$TUNED_FILE" ]; then
+        docker compose -f "$BASE_FILE" -f "$TUNED_FILE" ps || true
+      else
+        docker compose -f "$BASE_FILE" ps || true
+      fi
+      ;;
+    docker-compose)
+      if [ -f "$TUNED_FILE" ]; then
+        docker-compose -f "$BASE_FILE" -f "$TUNED_FILE" ps || true
+      else
+        docker-compose -f "$BASE_FILE" ps || true
+      fi
+      ;;
+  esac
+}
+
+print_post_init_summary() {
+  detect_access_host
+  BACKEND_PORT="${BACKEND_PORT:-8000}"
+  FRONTEND_PORT="${FRONTEND_PORT:-5173}"
+  POSTGRES_HOST_VALUE="${POSTGRES_HOST:-db}"
+  POSTGRES_PORT_VALUE="${POSTGRES_PORT:-5432}"
+  ADMIN_USER_VALUE="${DJANGO_SUPERUSER_USERNAME:-admin}"
+  ADMIN_EMAIL_VALUE="${DJANGO_SUPERUSER_EMAIL:-admin@example.com}"
+  ADMIN_PASSWORD_VALUE="${DJANGO_SUPERUSER_PASSWORD:-<set-in-.env>}"
+
+  printf '%s\n' "[init] stack status:"
+  show_compose_status
+
+  printf '%s\n' "[init] access information:"
+  printf '%s\n' "  - Frontend: http://$ACCESS_HOST:$FRONTEND_PORT"
+  printf '%s\n' "  - Backend API: http://$ACCESS_HOST:$BACKEND_PORT"
+  printf '%s\n' "  - Database (internal): $POSTGRES_HOST_VALUE:$POSTGRES_PORT_VALUE"
+  printf '%s\n' "[init] default admin credentials:"
+  printf '%s\n' "  - Username: $ADMIN_USER_VALUE"
+  printf '%s\n' "  - Email: $ADMIN_EMAIL_VALUE"
+  printf '%s\n' "  - Password: $ADMIN_PASSWORD_VALUE"
+}
+
 printf '%s\n' "[init] project root: $ROOT_DIR"
 parse_args "$@"
 ensure_env_file
+load_env_vars
 select_runtime_and_compose
 printf '%s\n' "[init] runtime: $RUNTIME_KIND, compose: $COMPOSE_KIND"
 run_compose_up
+print_post_init_summary
 printf '%s\n' "[init] done"
