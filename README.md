@@ -65,6 +65,12 @@ Force Podman runtime:
 sh ./init-stack.sh --runtime=podman
 ```
 
+Cleanup stale containers/networks before re-deploy:
+
+```bash
+sh ./cleanup-stack.sh
+```
+
 For full startup and deployment details, see:
 
 - [Setup Guide](docs/setup.md)

@@ -26,6 +26,18 @@ One-command auto init (prefer Podman, fallback Docker, auto install if missing):
 sh ./init-stack.sh
 ```
 
+If container names/networks conflict or stale resources block startup, run cleanup first:
+
+```bash
+sh ./cleanup-stack.sh
+```
+
+To also remove PostgreSQL persistent data (irreversible):
+
+```bash
+sh ./cleanup-stack.sh --purge-data
+```
+
 Force Podman runtime:
 
 ```bash
