@@ -1,0 +1,37 @@
+services:
+  db:
+    command:
+      [
+        "postgres",
+        "-c", "max_connections=80",
+        "-c", "shared_buffers=512MB",
+        "-c", "effective_cache_size=1536MB",
+        "-c", "maintenance_work_mem=128MB",
+        "-c", "work_mem=4MB",
+        "-c", "wal_buffers=16MB",
+        "-c", "checkpoint_completion_target=0.9",
+      ]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    environment:
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+      GUNICORN_MAX_REQUESTS: ${GUNICORN_MAX_REQUESTS:-1000}
+      GUNICORN_MAX_REQUESTS_JITTER: ${GUNICORN_MAX_REQUESTS_JITTER:-100}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -18,6 +18,25 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+One-command auto init (prefer Podman, fallback Docker, auto install if missing):
+
+```bash
+sh ./init-stack.sh
+```
+
+Force Podman runtime:
+
+```bash
+sh ./init-stack.sh --runtime=podman
+```
+
+For a 2c4g/50G single-server setup, use the tuned override:
+
+```bash
+cp .env.example .env
+docker compose -f docker-compose.yml -f docker-compose.2c4g.yml up -d --build
+```
+
 What this does:
 
 - Starts PostgreSQL (`db`)

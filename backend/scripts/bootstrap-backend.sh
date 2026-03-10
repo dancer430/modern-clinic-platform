@@ -65,4 +65,14 @@ else
 fi
 
 echo "[bootstrap] starting gunicorn..."
-exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+GUNICORN_WORKERS="${GUNICORN_WORKERS:-2}"
+GUNICORN_TIMEOUT="${GUNICORN_TIMEOUT:-120}"
+GUNICORN_MAX_REQUESTS="${GUNICORN_MAX_REQUESTS:-1000}"
+GUNICORN_MAX_REQUESTS_JITTER="${GUNICORN_MAX_REQUESTS_JITTER:-100}"
+
+exec gunicorn config.wsgi:application \
+  --bind 0.0.0.0:8000 \
+  --workers "${GUNICORN_WORKERS}" \
+  --timeout "${GUNICORN_TIMEOUT}" \
+  --max-requests "${GUNICORN_MAX_REQUESTS}" \
+  --max-requests-jitter "${GUNICORN_MAX_REQUESTS_JITTER}"
