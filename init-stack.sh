@@ -70,6 +70,35 @@ detect_os() {
   uname -s | tr '[:upper:]' '[:lower:]'
 }
 
+install_docker_official_repo_debian() {
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
+
+  . /etc/os-release
+  CODENAME=${VERSION_CODENAME:-}
+  if [ -z "$CODENAME" ]; then
+    return 1
+  fi
+
+  run_as_root apt-get update
+  run_as_root apt-get install -y ca-certificates curl gnupg
+  run_as_root install -m 0755 -d /etc/apt/keyrings
+
+  if [ "$ID" = "ubuntu" ]; then
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | run_as_root gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    run_as_root chmod a+r /etc/apt/keyrings/docker.gpg
+    printf '%s\n' "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $CODENAME stable" | run_as_root tee /etc/apt/sources.list.d/docker.list >/dev/null
+  else
+    curl -fsSL https://download.docker.com/linux/debian/gpg | run_as_root gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    run_as_root chmod a+r /etc/apt/keyrings/docker.gpg
+    printf '%s\n' "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $CODENAME stable" | run_as_root tee /etc/apt/sources.list.d/docker.list >/dev/null
+  fi
+
+  run_as_root apt-get update
+  run_as_root apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+}
+
 install_podman_linux() {
   if [ ! -f /etc/os-release ]; then
     printf '%s\n' "[init] /etc/os-release not found, cannot auto-install podman" >&2
@@ -267,7 +296,18 @@ install_docker_linux() {
   case "$DIST_ID" in
     ubuntu|debian)
       run_as_root apt-get update
-      run_as_root apt-get install -y docker.io docker-compose-v2 || run_as_root apt-get install -y docker.io docker-compose-plugin
+      if run_as_root apt-get install -y docker.io docker-compose-v2; then
+        return 0
+      fi
+      if run_as_root apt-get install -y docker.io docker-compose-plugin; then
+        return 0
+      fi
+      if run_as_root apt-get install -y docker.io; then
+        if docker compose version >/dev/null 2>&1; then
+          return 0
+        fi
+      fi
+      install_docker_official_repo_debian
       ;;
     fedora)
       run_as_root dnf install -y docker docker-compose
@@ -285,7 +325,18 @@ install_docker_linux() {
     *)
       if printf '%s' "$DIST_LIKE" | grep -Eq 'debian|ubuntu'; then
         run_as_root apt-get update
-        run_as_root apt-get install -y docker.io docker-compose-v2 || run_as_root apt-get install -y docker.io docker-compose-plugin
+        if run_as_root apt-get install -y docker.io docker-compose-v2; then
+          return 0
+        fi
+        if run_as_root apt-get install -y docker.io docker-compose-plugin; then
+          return 0
+        fi
+        if run_as_root apt-get install -y docker.io; then
+          if docker compose version >/dev/null 2>&1; then
+            return 0
+          fi
+        fi
+        install_docker_official_repo_debian
       elif printf '%s' "$DIST_LIKE" | grep -Eq 'rhel|fedora|centos'; then
         if has_cmd dnf; then
           run_as_root dnf install -y docker docker-compose-plugin || run_as_root dnf install -y moby-engine docker-compose-plugin
