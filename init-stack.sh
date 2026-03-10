@@ -492,6 +492,18 @@ select_runtime_and_compose() {
         return
       fi
     fi
+    if has_cmd docker-compose && is_legacy_docker_compose_v1; then
+      printf '%s\n' "[init] detected legacy docker-compose v1, trying to install docker compose v2 plugin..."
+      install_docker_linux
+      if has_cmd docker; then
+        ensure_docker_ready
+        if docker compose version >/dev/null 2>&1; then
+          RUNTIME_KIND="docker"
+          COMPOSE_KIND="docker_compose"
+          return
+        fi
+      fi
+    fi
     if has_cmd docker-compose && ! is_legacy_docker_compose_v1; then
       RUNTIME_KIND="docker"
       COMPOSE_KIND="docker-compose"
