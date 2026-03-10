@@ -9,6 +9,8 @@ This guide provides a one-command startup flow with process guardians for both b
 - Docker
 - Docker Compose v2 (`docker compose`)
 
+Legacy `docker-compose` v1 (for example 1.29.x) is not supported and can fail with errors like `KeyError: 'ContainerConfig'`.
+
 ### 1.2 Quick Start
 
 From project root:

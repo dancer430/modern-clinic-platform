@@ -33,6 +33,26 @@ has_cmd() {
   command -v "$1" >/dev/null 2>&1
 }
 
+is_legacy_docker_compose_v1() {
+  if ! has_cmd docker-compose; then
+    return 1
+  fi
+
+  VERSION_TEXT=$(docker-compose version --short 2>/dev/null || true)
+  if [ -z "$VERSION_TEXT" ]; then
+    VERSION_TEXT=$(docker-compose version 2>/dev/null || true)
+  fi
+
+  case "$VERSION_TEXT" in
+    1.*|*" version 1."*)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 run_as_root() {
   if [ "$(id -u)" -eq 0 ]; then
     "$@"
@@ -421,10 +441,14 @@ select_runtime_and_compose() {
         return
       fi
     fi
-    if has_cmd docker-compose; then
+    if has_cmd docker-compose && ! is_legacy_docker_compose_v1; then
       RUNTIME_KIND="docker"
       COMPOSE_KIND="docker-compose"
       return
+    fi
+    if has_cmd docker-compose && is_legacy_docker_compose_v1; then
+      printf '%s\n' "[init] detected legacy docker-compose v1, please install docker compose v2 plugin" >&2
+      exit 1
     fi
     printf '%s\n' "[init] forced runtime docker, but no compose command found" >&2
     exit 1
@@ -453,10 +477,13 @@ select_runtime_and_compose() {
     fi
   fi
 
-  if has_cmd docker-compose; then
+  if has_cmd docker-compose && ! is_legacy_docker_compose_v1; then
     RUNTIME_KIND="docker"
     COMPOSE_KIND="docker-compose"
     return
+  fi
+  if has_cmd docker-compose && is_legacy_docker_compose_v1; then
+    printf '%s\n' "[init] detected legacy docker-compose v1, skipping it and expecting docker compose v2" >&2
   fi
 
   if [ -n "${RUNTIME_KIND}" ]; then
@@ -488,10 +515,13 @@ select_runtime_and_compose() {
     fi
   fi
 
-  if has_cmd docker-compose; then
+  if has_cmd docker-compose && ! is_legacy_docker_compose_v1; then
     RUNTIME_KIND="docker"
     COMPOSE_KIND="docker-compose"
     return
+  fi
+  if has_cmd docker-compose && is_legacy_docker_compose_v1; then
+    printf '%s\n' "[init] detected legacy docker-compose v1, please install docker compose v2 plugin" >&2
   fi
 
   printf '%s\n' "[init] no usable compose command found after installation" >&2
