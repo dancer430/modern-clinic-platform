@@ -63,30 +63,30 @@ install_podman_linux() {
   case "$DIST_ID" in
     ubuntu|debian)
       run_as_root apt-get update
-      run_as_root apt-get install -y podman podman-compose
+      run_as_root apt-get install -y podman
       ;;
     fedora)
-      run_as_root dnf install -y podman podman-compose
+      run_as_root dnf install -y podman
       ;;
     centos|rhel|rocky|almalinux|ol)
       if has_cmd dnf; then
-        run_as_root dnf install -y podman podman-compose
+        run_as_root dnf install -y podman
       else
-        run_as_root yum install -y podman podman-compose
+        run_as_root yum install -y podman
       fi
       ;;
     arch|manjaro)
-      run_as_root pacman -Sy --noconfirm podman podman-compose
+      run_as_root pacman -Sy --noconfirm podman
       ;;
     *)
       if printf '%s' "$DIST_LIKE" | grep -Eq 'debian|ubuntu'; then
         run_as_root apt-get update
-        run_as_root apt-get install -y podman podman-compose
+        run_as_root apt-get install -y podman
       elif printf '%s' "$DIST_LIKE" | grep -Eq 'rhel|fedora|centos'; then
         if has_cmd dnf; then
-          run_as_root dnf install -y podman podman-compose
+          run_as_root dnf install -y podman
         else
-          run_as_root yum install -y podman podman-compose
+          run_as_root yum install -y podman
         fi
       else
         printf '%s\n' "[init] unsupported linux distro for auto podman install: ${DIST_ID:-unknown}" >&2
@@ -101,7 +101,137 @@ install_podman_macos() {
     printf '%s\n' "[init] homebrew not found, cannot auto-install podman on macOS" >&2
     return 1
   fi
-  brew install podman podman-compose
+  brew install podman
+  if brew install podman-compose; then
+    return 0
+  fi
+  brew install docker-compose
+}
+
+install_podman_compose_provider_linux() {
+  if [ ! -f /etc/os-release ]; then
+    return 1
+  fi
+
+  . /etc/os-release
+  DIST_ID=${ID:-}
+  DIST_LIKE=${ID_LIKE:-}
+
+  case "$DIST_ID" in
+    ubuntu|debian)
+      run_as_root apt-get update
+      if run_as_root apt-get install -y podman-compose; then
+        return 0
+      fi
+      if run_as_root apt-get install -y docker-compose-plugin; then
+        return 0
+      fi
+      if run_as_root apt-get install -y docker-compose; then
+        return 0
+      fi
+      if run_as_root apt-get install -y python3-pip && run_as_root python3 -m pip install --break-system-packages podman-compose; then
+        return 0
+      fi
+      if run_as_root apt-get install -y python3-pip && run_as_root python3 -m pip install podman-compose; then
+        return 0
+      fi
+      ;;
+    fedora)
+      if run_as_root dnf install -y podman-compose; then
+        return 0
+      fi
+      if run_as_root dnf install -y docker-compose-plugin; then
+        return 0
+      fi
+      if run_as_root dnf install -y docker-compose; then
+        return 0
+      fi
+      ;;
+    centos|rhel|rocky|almalinux|ol)
+      if has_cmd dnf; then
+        if run_as_root dnf install -y podman-compose; then
+          return 0
+        fi
+        if run_as_root dnf install -y docker-compose-plugin; then
+          return 0
+        fi
+      else
+        if run_as_root yum install -y podman-compose; then
+          return 0
+        fi
+        if run_as_root yum install -y docker-compose; then
+          return 0
+        fi
+      fi
+      ;;
+    arch|manjaro)
+      if run_as_root pacman -Sy --noconfirm podman-compose; then
+        return 0
+      fi
+      if run_as_root pacman -Sy --noconfirm docker-compose; then
+        return 0
+      fi
+      ;;
+    *)
+      if printf '%s' "$DIST_LIKE" | grep -Eq 'debian|ubuntu'; then
+        run_as_root apt-get update
+        if run_as_root apt-get install -y podman-compose; then
+          return 0
+        fi
+        if run_as_root apt-get install -y docker-compose-plugin; then
+          return 0
+        fi
+        if run_as_root apt-get install -y docker-compose; then
+          return 0
+        fi
+      elif printf '%s' "$DIST_LIKE" | grep -Eq 'rhel|fedora|centos'; then
+        if has_cmd dnf; then
+          if run_as_root dnf install -y podman-compose; then
+            return 0
+          fi
+          if run_as_root dnf install -y docker-compose-plugin; then
+            return 0
+          fi
+        else
+          if run_as_root yum install -y podman-compose; then
+            return 0
+          fi
+          if run_as_root yum install -y docker-compose; then
+            return 0
+          fi
+        fi
+      fi
+      ;;
+  esac
+
+  return 1
+}
+
+ensure_podman_compose_available() {
+  if podman compose version >/dev/null 2>&1; then
+    return 0
+  fi
+
+  OS_NAME=$(detect_os)
+  if [ "$OS_NAME" = "linux" ]; then
+    printf '%s\n' "[init] podman compose provider missing, installing provider..."
+    if install_podman_compose_provider_linux && podman compose version >/dev/null 2>&1; then
+      return 0
+    fi
+    return 1
+  fi
+
+  if [ "$OS_NAME" = "darwin" ]; then
+    if has_cmd brew; then
+      if brew install podman-compose || brew install docker-compose; then
+        podman compose version >/dev/null 2>&1
+        return
+      fi
+    fi
+    return 1
+  fi
+
+  return 1
 }
 
 install_docker_linux() {
@@ -264,7 +394,7 @@ select_runtime_and_compose() {
       install_runtime_by_force
     fi
     ensure_podman_ready
-    if podman compose version >/dev/null 2>&1; then
+    if ensure_podman_compose_available; then
       RUNTIME_KIND="podman"
       COMPOSE_KIND="podman_compose"
       return
@@ -302,7 +432,7 @@ select_runtime_and_compose() {
 
   if has_cmd podman; then
     ensure_podman_ready
-    if podman compose version >/dev/null 2>&1; then
+    if ensure_podman_compose_available; then
       RUNTIME_KIND="podman"
       COMPOSE_KIND="podman_compose"
       return
@@ -337,7 +467,7 @@ select_runtime_and_compose() {
 
   if has_cmd podman; then
     ensure_podman_ready
-    if podman compose version >/dev/null 2>&1; then
+    if ensure_podman_compose_available; then
       RUNTIME_KIND="podman"
       COMPOSE_KIND="podman_compose"
       return
