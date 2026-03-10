@@ -699,15 +699,56 @@ show_compose_status() {
   esac
 }
 
+resolve_backend_env_value() {
+  VAR_NAME="$1"
+
+  if [ "$RUNTIME_KIND" = "docker" ] && has_cmd docker; then
+    CONTAINER_ENV=$(docker inspect booking-backend --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null || true)
+    if [ -n "$CONTAINER_ENV" ]; then
+      VALUE=$(printf '%s\n' "$CONTAINER_ENV" | while IFS= read -r line; do
+        if [ "${line#"$VAR_NAME="}" != "$line" ]; then
+          printf '%s\n' "${line#*=}"
+          break
+        fi
+      done)
+      if [ -n "$VALUE" ]; then
+        printf '%s\n' "$VALUE"
+        return
+      fi
+    fi
+  fi
+
+  if [ "$RUNTIME_KIND" = "podman" ] && has_cmd podman; then
+    CONTAINER_ENV=$(podman inspect booking-backend --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null || true)
+    if [ -n "$CONTAINER_ENV" ]; then
+      VALUE=$(printf '%s\n' "$CONTAINER_ENV" | while IFS= read -r line; do
+        if [ "${line#"$VAR_NAME="}" != "$line" ]; then
+          printf '%s\n' "${line#*=}"
+          break
+        fi
+      done)
+      if [ -n "$VALUE" ]; then
+        printf '%s\n' "$VALUE"
+        return
+      fi
+    fi
+  fi
+
+  eval "printf '%s\n' \"\${$VAR_NAME:-}\""
+}
+
 print_post_init_summary() {
   detect_access_host
   BACKEND_PORT="${BACKEND_PORT:-8000}"
   FRONTEND_PORT="${FRONTEND_PORT:-5173}"
   POSTGRES_HOST_VALUE="${POSTGRES_HOST:-db}"
   POSTGRES_PORT_VALUE="${POSTGRES_PORT:-5432}"
-  ADMIN_USER_VALUE="${DJANGO_SUPERUSER_USERNAME:-admin}"
-  ADMIN_EMAIL_VALUE="${DJANGO_SUPERUSER_EMAIL:-admin@example.com}"
-  ADMIN_PASSWORD_VALUE="${DJANGO_SUPERUSER_PASSWORD:-<set-in-.env>}"
+  ADMIN_USER_VALUE=$(resolve_backend_env_value DJANGO_SUPERUSER_USERNAME)
+  ADMIN_EMAIL_VALUE=$(resolve_backend_env_value DJANGO_SUPERUSER_EMAIL)
+  ADMIN_PASSWORD_VALUE=$(resolve_backend_env_value DJANGO_SUPERUSER_PASSWORD)
+  if [ -z "$ADMIN_USER_VALUE" ]; then ADMIN_USER_VALUE="admin"; fi
+  if [ -z "$ADMIN_EMAIL_VALUE" ]; then ADMIN_EMAIL_VALUE="admin@example.com"; fi
+  if [ -z "$ADMIN_PASSWORD_VALUE" ]; then ADMIN_PASSWORD_VALUE="<set-in-.env>"; fi
 
   printf '%s\n' "[init] stack status:"
   show_compose_status

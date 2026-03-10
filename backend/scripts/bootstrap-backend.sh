@@ -56,8 +56,11 @@ else:
         user.is_superuser = True
         user.is_staff = True
         changed = True
+    if not user.check_password(password):
+        user.set_password(password)
+        changed = True
     if changed:
-        user.save(update_fields=["email", "is_superuser", "is_staff"])
+        user.save(update_fields=["email", "is_superuser", "is_staff", "password"])
     print("[bootstrap] superuser already exists")
 PY
 else
