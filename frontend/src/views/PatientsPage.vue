@@ -38,6 +38,7 @@ const form = ref({
 })
 
 const canManage = computed(() => authStore.isAdmin)
+const canCreatePatient = computed(() => authStore.isAdmin || authStore.isDoctor)
 
 const filteredPatients = computed(() => {
   return patients.value.filter((item) => {
@@ -85,7 +86,7 @@ const resetForm = () => {
 }
 
 const openCreate = () => {
-  if (!canManage.value) return
+  if (!canCreatePatient.value) return
   editingId.value = null
   resetForm()
   submitAttempted.value = false
@@ -130,7 +131,9 @@ const extractErrorMessage = (error: any, fallback: string) => {
 
 const savePatient = async () => {
   submitAttempted.value = true
-  if (!canManage.value || formInvalid.value) return
+  if (formInvalid.value) return
+  if (editingId.value && !canManage.value) return
+  if (!editingId.value && !canCreatePatient.value) return
 
   const payload = {
     username: form.value.username.trim(),
@@ -190,7 +193,7 @@ onMounted(async () => {
         <h2>Patients</h2>
         <p>{{ filteredPatients.length }} patient accounts</p>
       </div>
-      <button class="primary" :disabled="!canManage" @click="openCreate">+ Add Patient</button>
+      <button class="primary" :disabled="!canCreatePatient" @click="openCreate">+ Add Patient</button>
     </section>
 
     <section v-if="errorMessage" class="table-card" style="padding: 10px 12px; color: #c2334a;">
@@ -198,7 +201,7 @@ onMounted(async () => {
     </section>
 
     <section v-if="!canManage" class="table-card" style="padding: 10px 12px; color: #9b6d00;">
-      Only admin can create, edit, or delete patient accounts.
+      Admin can create, edit, and delete patient accounts. Doctors can create patient accounts.
     </section>
 
     <section class="filters">

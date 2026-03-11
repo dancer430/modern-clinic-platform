@@ -79,6 +79,17 @@ class UserManageSerializer(serializers.ModelSerializer):
             "password",
         ]
 
+    def _suggest_username(self, username: str, users_qs):
+        base = username.strip()
+        if not base:
+            return ""
+        candidate = f"{base}2"
+        suffix = 2
+        while users_qs.filter(username__iexact=candidate).exists():
+            suffix += 1
+            candidate = f"{base}{suffix}"
+        return candidate
+
     def validate(self, attrs):
         role_value = self.context.get("role_value") or getattr(
             self.instance, "role", ""
@@ -117,6 +128,12 @@ class UserManageSerializer(serializers.ModelSerializer):
         users_qs = User._default_manager.all()
         if editing_id is not None:
             users_qs = users_qs.exclude(id=editing_id)
+
+        if users_qs.filter(username__iexact=current_username).exists():
+            suggestion = self._suggest_username(current_username, users_qs)
+            raise serializers.ValidationError(
+                {"username": f"username already exists, please try '{suggestion}'"}
+            )
 
         if current_email:
             if users_qs.filter(email__iexact=current_email).exists():

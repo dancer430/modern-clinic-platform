@@ -154,6 +154,25 @@ class DoctorViewSet(BaseRoleUserViewSet):
 class PatientViewSet(BaseRoleUserViewSet):
     role_value = User.Role.PATIENT
 
+    def get_permissions(self):
+        if self.action == "create":
+            return [CanCreatePatientPermission()]
+        if self.action in ["update", "partial_update", "destroy"]:
+            return [permissions.IsAdminUser()]
+        return [permissions.IsAuthenticated()]
+
     @extend_schema(responses=UserSerializer(many=True))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
+
+class CanCreatePatientPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return bool(
+            user.is_superuser
+            or user.is_staff
+            or getattr(user, "role", "") in [User.Role.ADMIN, User.Role.DOCTOR]
+        )
