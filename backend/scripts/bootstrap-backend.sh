@@ -45,7 +45,10 @@ password = os.environ["DJANGO_SUPERUSER_PASSWORD"]
 
 user = User._default_manager.filter(username=username).first()
 if user is None:
-    User._default_manager.create_superuser(username=username, email=email, password=password)
+    user = User._default_manager.create_superuser(username=username, email=email, password=password)
+    if user.role != User.Role.ADMIN:
+        user.role = User.Role.ADMIN
+        user.save(update_fields=["role"])
     print("[bootstrap] superuser created")
 else:
     changed = False
@@ -56,11 +59,14 @@ else:
         user.is_superuser = True
         user.is_staff = True
         changed = True
+    if user.role != User.Role.ADMIN:
+        user.role = User.Role.ADMIN
+        changed = True
     if not user.check_password(password):
         user.set_password(password)
         changed = True
     if changed:
-        user.save(update_fields=["email", "is_superuser", "is_staff", "password"])
+        user.save(update_fields=["email", "is_superuser", "is_staff", "role", "password"])
     print("[bootstrap] superuser already exists")
 PY
 else
