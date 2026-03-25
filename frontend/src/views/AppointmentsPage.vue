@@ -41,8 +41,7 @@ interface CompleteAttachmentItem {
 interface UserOption {
   id: number
   username: string
-  first_name: string
-  last_name: string
+  name: string
   user_type: 'admin' | 'doctor' | 'patient'
 }
 
@@ -125,7 +124,7 @@ const form = ref({
   reason: '',
 })
 
-const displayName = (user: UserOption) => user.first_name || user.last_name ? `${user.first_name} ${user.last_name}`.trim() : user.username
+const displayName = (user: UserOption) => user.name?.trim() || user.username
 
 const filtered = computed(() => {
   return appointments.value

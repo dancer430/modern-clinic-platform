@@ -7,8 +7,7 @@ interface DoctorUser {
   id: number
   username: string
   email: string
-  first_name: string
-  last_name: string
+  name: string
   role: 'doctor'
   user_type: 'doctor'
   phone: string
@@ -30,8 +29,7 @@ const submitAttempted = ref(false)
 
 const form = ref({
   username: '',
-  first_name: '',
-  last_name: '',
+  name: '',
   email: '',
   phone: '',
   password: '',
@@ -41,7 +39,7 @@ const canManage = computed(() => authStore.isAdmin)
 
 const filteredDoctors = computed(() => {
   return doctors.value.filter((item) => {
-    const text = `${item.username} ${item.first_name} ${item.last_name} ${item.email} ${item.phone}`.toLowerCase()
+    const text = `${item.username} ${item.name} ${item.email} ${item.phone}`.toLowerCase()
     const hitSearch = !query.value || text.includes(query.value.toLowerCase())
     const hitStatus =
       statusFilter.value === 'all' ||
@@ -52,8 +50,7 @@ const filteredDoctors = computed(() => {
 })
 
 const displayName = (doctor: DoctorUser) => {
-  const fullName = `${doctor.first_name} ${doctor.last_name}`.trim()
-  return fullName || doctor.username
+  return doctor.name?.trim() || doctor.username
 }
 
 const fetchDoctors = async () => {
@@ -76,8 +73,7 @@ const loadPageData = async () => {
 const resetForm = () => {
   form.value = {
     username: '',
-    first_name: '',
-    last_name: '',
+    name: '',
     email: '',
     phone: '',
     password: '',
@@ -97,8 +93,7 @@ const openEdit = (doctor: DoctorUser) => {
   editingId.value = doctor.id
   form.value = {
     username: doctor.username,
-    first_name: doctor.first_name,
-    last_name: doctor.last_name,
+    name: doctor.name,
     email: doctor.email,
     phone: doctor.phone,
     password: '',
@@ -110,8 +105,7 @@ const openEdit = (doctor: DoctorUser) => {
 const formInvalid = computed(
   () =>
     !form.value.username.trim() ||
-    !form.value.first_name.trim() ||
-    !form.value.last_name.trim() ||
+    !form.value.name.trim() ||
     !form.value.email.trim() ||
     !form.value.phone.trim()
 )
@@ -139,8 +133,7 @@ const saveDoctor = async () => {
 
   const payload = {
     username: form.value.username.trim(),
-    first_name: form.value.first_name.trim(),
-    last_name: form.value.last_name.trim(),
+    name: form.value.name.trim(),
     email: form.value.email.trim(),
     phone: form.value.phone.trim(),
     ...(form.value.password.trim() ? { password: form.value.password.trim() } : {}),
@@ -261,8 +254,7 @@ onMounted(async () => {
         <h3>{{ editingId ? 'Edit Doctor' : 'Add Doctor' }}</h3>
         <div class="grid">
           <input v-model="form.username" placeholder="Username *" :class="{ 'input-invalid': submitAttempted && !form.username.trim() }" />
-          <input v-model="form.first_name" placeholder="First name *" :class="{ 'input-invalid': submitAttempted && !form.first_name.trim() }" />
-          <input v-model="form.last_name" placeholder="Last name *" :class="{ 'input-invalid': submitAttempted && !form.last_name.trim() }" />
+          <input v-model="form.name" placeholder="Name *" :class="{ 'input-invalid': submitAttempted && !form.name.trim() }" />
           <input v-model="form.email" placeholder="Email *" :class="{ 'input-invalid': submitAttempted && !form.email.trim() }" />
           <input v-model="form.phone" placeholder="Phone *" :class="{ 'input-invalid': submitAttempted && !form.phone.trim() }" />
           <input v-model="form.password" type="password" :placeholder="editingId ? 'Reset password (optional)' : 'Initial password (optional)'" />

@@ -7,6 +7,19 @@ paths:
   /api/appointments/:
     get:
       operationId: appointments_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: 分页结果集中的页码。
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: 每页返回的结果数量。
+        schema:
+          type: integer
       tags:
       - appointments
       security:
@@ -16,9 +29,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Appointment'
+                $ref: '#/components/schemas/PaginatedAppointmentList'
           description: ''
     post:
       operationId: appointments_create
@@ -53,7 +64,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this appointment.
+        description: 标识此 appointment 的 唯一整数值。
         required: true
       tags:
       - appointments
@@ -73,7 +84,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this appointment.
+        description: 标识此 appointment 的 唯一整数值。
         required: true
       tags:
       - appointments
@@ -105,7 +116,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this appointment.
+        description: 标识此 appointment 的 唯一整数值。
         required: true
       tags:
       - appointments
@@ -136,7 +147,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this appointment.
+        description: 标识此 appointment 的 唯一整数值。
         required: true
       tags:
       - appointments
@@ -153,7 +164,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this appointment.
+        description: 标识此 appointment 的 唯一整数值。
         required: true
       tags:
       - appointments
@@ -186,7 +197,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this appointment.
+        description: 标识此 appointment 的 唯一整数值。
         required: true
       tags:
       - appointments
@@ -219,7 +230,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this appointment.
+        description: 标识此 appointment 的 唯一整数值。
         required: true
       tags:
       - appointments
@@ -244,6 +255,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Appointment'
           description: ''
+  /api/auth/change-password/:
+    post:
+      operationId: auth_change_password_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChange'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/auth/doctors/:
     get:
       operationId: auth_doctors_list
@@ -293,7 +326,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this 用户.
+        description: 标识此 用户 的 唯一整数值。
         required: true
       tags:
       - auth
@@ -313,7 +346,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this 用户.
+        description: 标识此 用户 的 唯一整数值。
         required: true
       tags:
       - auth
@@ -345,7 +378,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this 用户.
+        description: 标识此 用户 的 唯一整数值。
         required: true
       tags:
       - auth
@@ -376,7 +409,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this 用户.
+        description: 标识此 用户 的 唯一整数值。
         required: true
       tags:
       - auth
@@ -447,6 +480,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+    patch:
+      operationId: auth_me_partial_update
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
   /api/auth/patients/:
     get:
       operationId: auth_patients_list
@@ -496,7 +553,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this 用户.
+        description: 标识此 用户 的 唯一整数值。
         required: true
       tags:
       - auth
@@ -516,7 +573,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this 用户.
+        description: 标识此 用户 的 唯一整数值。
         required: true
       tags:
       - auth
@@ -548,7 +605,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this 用户.
+        description: 标识此 用户 的 唯一整数值。
         required: true
       tags:
       - auth
@@ -579,7 +636,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this 用户.
+        description: 标识此 用户 的 唯一整数值。
         required: true
       tags:
       - auth
@@ -588,6 +645,45 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/auth/platform/:
+    get:
+      operationId: auth_platform_retrieve
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformSetting'
+          description: ''
+    patch:
+      operationId: auth_platform_partial_update
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlatformSetting'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPlatformSetting'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlatformSetting'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformSetting'
+          description: ''
   /api/auth/refresh/:
     post:
       operationId: auth_refresh_create
@@ -664,7 +760,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this doctor schedule slot.
+        description: 标识此 doctor schedule slot 的 唯一整数值。
         required: true
       tags:
       - schedule-slots
@@ -684,7 +780,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this doctor schedule slot.
+        description: 标识此 doctor schedule slot 的 唯一整数值。
         required: true
       tags:
       - schedule-slots
@@ -716,7 +812,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this doctor schedule slot.
+        description: 标识此 doctor schedule slot 的 唯一整数值。
         required: true
       tags:
       - schedule-slots
@@ -747,7 +843,7 @@ paths:
         name: id
         schema:
           type: integer
-        description: A unique integer value identifying this doctor schedule slot.
+        description: 标识此 doctor schedule slot 的 唯一整数值。
         required: true
       tags:
       - schedule-slots
@@ -798,6 +894,9 @@ components:
         medical_advice:
           type: string
           readOnly: true
+        attachments:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -809,6 +908,7 @@ components:
       required:
       - appointment_date
       - appointment_time
+      - attachments
       - confirm_info
       - created_at
       - diagnosis_result
@@ -838,6 +938,45 @@ components:
       properties:
         refresh:
           type: string
+    PaginatedAppointmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Appointment'
+    PasswordChange:
+      type: object
+      properties:
+        current_password:
+          type: string
+          writeOnly: true
+        new_password:
+          type: string
+          writeOnly: true
+        confirm_password:
+          type: string
+          writeOnly: true
+      required:
+      - confirm_password
+      - current_password
+      - new_password
     PatchedAppointment:
       type: object
       properties:
@@ -878,6 +1017,9 @@ components:
         medical_advice:
           type: string
           readOnly: true
+        attachments:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -886,6 +1028,49 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedPlatformSetting:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        platform_name:
+          type: string
+          maxLength: 120
+        logo_data:
+          type: string
+        logo_type:
+          type: string
+          maxLength: 50
+        logo_size:
+          type: integer
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedProfileUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: 电子邮件地址
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 20
+        avatar_data:
+          type: string
+        avatar_type:
+          type: string
+          maxLength: 50
+        avatar_size:
+          type: integer
+          nullable: true
     PatchedScheduleSlot:
       type: object
       properties:
@@ -930,13 +1115,8 @@ components:
           format: email
           title: 电子邮件地址
           maxLength: 254
-        first_name:
+        name:
           type: string
-          title: 名字
-          maxLength: 150
-        last_name:
-          type: string
-          title: 姓氏
           maxLength: 150
         role:
           type: string
@@ -947,6 +1127,14 @@ components:
         phone:
           type: string
           maxLength: 20
+        avatar_data:
+          type: string
+        avatar_type:
+          type: string
+          maxLength: 50
+        avatar_size:
+          type: integer
+          nullable: true
         is_active:
           type: boolean
           title: 有效
@@ -955,6 +1143,30 @@ components:
           type: string
           writeOnly: true
           minLength: 6
+    PlatformSetting:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        platform_name:
+          type: string
+          maxLength: 120
+        logo_data:
+          type: string
+        logo_type:
+          type: string
+          maxLength: 50
+        logo_size:
+          type: integer
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - updated_at
     RoleEnum:
       enum:
       - admin
@@ -1041,23 +1253,30 @@ components:
           format: email
           title: 电子邮件地址
           maxLength: 254
-        first_name:
+        name:
           type: string
-          title: 名字
-          maxLength: 150
-        last_name:
-          type: string
-          title: 姓氏
           maxLength: 150
         role:
           $ref: '#/components/schemas/RoleEnum'
         user_type:
           type: string
           readOnly: true
+        db_vendor:
+          type: string
+          readOnly: true
         phone:
           type: string
           maxLength: 20
+        avatar_data:
+          type: string
+        avatar_type:
+          type: string
+          maxLength: 50
+        avatar_size:
+          type: integer
+          nullable: true
       required:
+      - db_vendor
       - id
       - user_type
       - username
@@ -1078,13 +1297,8 @@ components:
           format: email
           title: 电子邮件地址
           maxLength: 254
-        first_name:
+        name:
           type: string
-          title: 名字
-          maxLength: 150
-        last_name:
-          type: string
-          title: 姓氏
           maxLength: 150
         role:
           type: string
@@ -1095,6 +1309,14 @@ components:
         phone:
           type: string
           maxLength: 20
+        avatar_data:
+          type: string
+        avatar_type:
+          type: string
+          maxLength: 50
+        avatar_size:
+          type: integer
+          nullable: true
         is_active:
           type: boolean
           title: 有效

@@ -58,11 +58,9 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             if q:
                 queryset = queryset.filter(
                     Q(patient__username__icontains=q)
-                    | Q(patient__first_name__icontains=q)
-                    | Q(patient__last_name__icontains=q)
+                    | Q(patient__name__icontains=q)
                     | Q(doctor__username__icontains=q)
-                    | Q(doctor__first_name__icontains=q)
-                    | Q(doctor__last_name__icontains=q)
+                    | Q(doctor__name__icontains=q)
                     | Q(reason__icontains=q)
                     | Q(diagnosis_result__icontains=q)
                 )

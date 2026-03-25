@@ -74,3 +74,16 @@ sh ./cleanup-stack.sh
 For full startup and deployment details, see:
 
 - [Setup Guide](docs/setup.md)
+
+## Development Workflow Convention
+
+For this repository, use the following Git workflow for every change:
+
+1. Create a new `feature/*` branch from the latest `main`
+2. Implement and verify changes locally
+3. Commit on the feature branch
+4. Push and open a Pull Request
+5. Merge the PR after checks/review pass
+6. Switch back to local `main` and pull latest remote updates
+
+This is the default operating convention for ongoing development.

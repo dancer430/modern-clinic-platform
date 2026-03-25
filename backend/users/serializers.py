@@ -19,8 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "username",
             "email",
-            "first_name",
-            "last_name",
+            "name",
             "role",
             "user_type",
             "db_vendor",
@@ -67,8 +66,7 @@ class UserManageSerializer(serializers.ModelSerializer):
             "id",
             "username",
             "email",
-            "first_name",
-            "last_name",
+            "name",
             "role",
             "user_type",
             "phone",
@@ -96,21 +94,19 @@ class UserManageSerializer(serializers.ModelSerializer):
         )
         editing_id = getattr(self.instance, "id", None)
 
-        for field in ["username", "first_name", "last_name", "email", "phone"]:
+        for field in ["username", "name", "email", "phone"]:
             value = attrs.get(field)
             if isinstance(value, str):
                 attrs[field] = value.strip()
 
         current_username = attrs.get("username")
-        current_first_name = attrs.get("first_name")
-        current_last_name = attrs.get("last_name")
+        current_name = attrs.get("name")
         current_email = attrs.get("email")
         current_phone = attrs.get("phone")
 
         if self.instance is not None:
             current_username = current_username or self.instance.username
-            current_first_name = current_first_name or self.instance.first_name
-            current_last_name = current_last_name or self.instance.last_name
+            current_name = current_name or self.instance.name
             current_email = (
                 current_email if current_email is not None else self.instance.email
             )
@@ -120,10 +116,8 @@ class UserManageSerializer(serializers.ModelSerializer):
 
         if not current_username:
             raise serializers.ValidationError({"username": "username is required"})
-        if not current_first_name:
-            raise serializers.ValidationError({"first_name": "first name is required"})
-        if not current_last_name:
-            raise serializers.ValidationError({"last_name": "last name is required"})
+        if not current_name:
+            raise serializers.ValidationError({"name": "name is required"})
 
         users_qs = User._default_manager.all()
         if editing_id is not None:
@@ -174,8 +168,7 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "first_name",
-            "last_name",
+            "name",
             "email",
             "phone",
             "avatar_data",

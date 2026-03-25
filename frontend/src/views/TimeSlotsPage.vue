@@ -24,8 +24,7 @@ const SLOT_TIMES = [
 interface UserOption {
   id: number
   username: string
-  first_name: string
-  last_name: string
+  name: string
 }
 
 interface ScheduleSlot {
@@ -82,7 +81,7 @@ const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const monthLabel = computed(() => new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(monthCursor.value))
 const isAdminRole = computed(() => authStore.isAdmin)
 
-const displayDoctorName = (doctor: UserOption) => doctor.first_name || doctor.last_name ? `${doctor.first_name} ${doctor.last_name}`.trim() : doctor.username
+const displayDoctorName = (doctor: UserOption) => doctor.name?.trim() || doctor.username
 
 const activeDoctor = computed(() => {
   if (!selectedDoctorId.value) return null
@@ -91,8 +90,7 @@ const activeDoctor = computed(() => {
 
 const displayUserName = (user: UserOption | null | undefined) => {
   if (!user) return '-'
-  const fullName = `${user.first_name} ${user.last_name}`.trim()
-  return fullName || user.username
+  return user.name?.trim() || user.username
 }
 
 const patientNameMap = computed(() => {
