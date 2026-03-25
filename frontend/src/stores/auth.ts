@@ -5,8 +5,7 @@ export interface User {
   id: number
   username: string
   email: string
-  first_name: string
-  last_name: string
+  name: string
   user_type: 'admin' | 'doctor' | 'patient'
   db_vendor?: 'sqlite' | 'postgresql' | string
   phone: string

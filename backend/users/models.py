@@ -9,6 +9,7 @@ class User(AbstractUser):
         PATIENT = "patient", "Patient"
 
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.PATIENT)
+    name = models.CharField(max_length=150, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     avatar_data = models.TextField(blank=True)
     avatar_type = models.CharField(max_length=50, blank=True)

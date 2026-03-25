@@ -32,8 +32,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     attachments = serializers.SerializerMethodField()
 
     def _display_name(self, user):
-        full_name = f"{user.first_name} {user.last_name}".strip()
-        return full_name or user.username
+        return (user.name or "").strip() or user.username
 
     def get_patient_name(self, obj):
         return self._display_name(obj.patient)

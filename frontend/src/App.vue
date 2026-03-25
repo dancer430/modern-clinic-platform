@@ -82,7 +82,7 @@ watch(
               alt="avatar"
               class="avatar-image"
             />
-            <template v-else>{{ authStore.user?.first_name?.[0] || authStore.user?.username?.[0] || 'U' }}</template>
+            <template v-else>{{ authStore.user?.name?.[0] || authStore.user?.username?.[0] || 'U' }}</template>
           </span>
           <div class="user-meta">
             <strong>{{ authStore.user?.username || 'demo_user' }}</strong>

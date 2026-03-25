@@ -20,8 +20,7 @@ interface RecordViewItem {
 interface UserOption {
   id: number
   username: string
-  first_name: string
-  last_name: string
+  name: string
 }
 
 interface PaginatedResponse<T> {
@@ -51,8 +50,7 @@ const pageSize = ref<10 | 20 | 50>(10)
 const totalCount = ref(0)
 
 const displayName = (user: UserOption) => {
-  const fullName = `${user.first_name} ${user.last_name}`.trim()
-  return fullName || user.username
+  return user.name?.trim() || user.username
 }
 
 const hasActiveFilters = computed(

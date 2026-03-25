@@ -17,8 +17,7 @@ const platformLogoDragging = ref(false)
 const { loadPlatformBrand } = usePlatformBrand()
 
 const profileForm = ref({
-  first_name: '',
-  last_name: '',
+  name: '',
   email: '',
   phone: '',
   avatar_data: '',
@@ -63,8 +62,7 @@ const passwordStrength = computed(() => {
 })
 
 const displayName = computed(() => {
-  const fullName = `${profileForm.value.first_name} ${profileForm.value.last_name}`.trim()
-  return fullName || authStore.user?.username || 'User'
+  return profileForm.value.name.trim() || authStore.user?.username || 'User'
 })
 
 const isAdmin = computed(() => authStore.isAdmin)
@@ -77,8 +75,7 @@ const loadProfile = async () => {
     const user = response.data
     authStore.setUser(user)
     profileForm.value = {
-      first_name: user.first_name || '',
-      last_name: user.last_name || '',
+      name: user.name || '',
       email: user.email || '',
       phone: user.phone || '',
       avatar_data: user.avatar_data || '',
@@ -319,8 +316,7 @@ onMounted(async () => {
         </div>
 
         <div class="grid">
-          <input v-model="profileForm.first_name" placeholder="First name" />
-          <input v-model="profileForm.last_name" placeholder="Last name" />
+          <input v-model="profileForm.name" placeholder="Name" />
           <input v-model="profileForm.email" placeholder="Email" />
           <input v-model="profileForm.phone" placeholder="Phone" />
         </div>
