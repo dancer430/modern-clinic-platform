@@ -51,7 +51,7 @@ const filteredPatients = computed(() => {
 })
 
 const displayName = (patient: PatientUser) => {
-  return patient.name?.trim() || patient.username
+  return patient.name?.trim() || '-'
 }
 
 const fetchPatients = async () => {
@@ -212,7 +212,6 @@ onMounted(async () => {
         <thead>
           <tr>
             <th>Name</th>
-            <th>Username</th>
             <th>Email</th>
             <th>Phone</th>
             <th>Status</th>
@@ -222,7 +221,6 @@ onMounted(async () => {
         <tbody>
           <tr v-for="patient in filteredPatients" :key="patient.id">
             <td>{{ displayName(patient) }}</td>
-            <td>{{ patient.username }}</td>
             <td>{{ patient.email || '-' }}</td>
             <td>{{ patient.phone || '-' }}</td>
             <td><span class="badge" :class="patient.is_active ? 'confirmed' : 'cancelled'">{{ patient.is_active ? 'active' : 'inactive' }}</span></td>
