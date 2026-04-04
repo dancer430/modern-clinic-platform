@@ -32,7 +32,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Appointment._default_manager.select_related("patient", "doctor")
+        queryset = Appointment._default_manager.select_related("patient", "doctor").prefetch_related("attachments")
         status_param = self.request.query_params.get("status")
         doctor_param = self.request.query_params.get("doctor")
         patient_param = self.request.query_params.get("patient")

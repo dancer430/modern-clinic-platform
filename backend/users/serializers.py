@@ -81,12 +81,15 @@ class UserManageSerializer(serializers.ModelSerializer):
         base = username.strip()
         if not base:
             return ""
-        candidate = f"{base}2"
+        # Fetch all taken suffixes in one query instead of looping with individual queries
+        taken = set(
+            users_qs.filter(username__iregex=rf"^{base}\d*$")
+            .values_list("username", flat=True)
+        )
         suffix = 2
-        while users_qs.filter(username__iexact=candidate).exists():
+        while f"{base}{suffix}".lower() in {u.lower() for u in taken}:
             suffix += 1
-            candidate = f"{base}{suffix}"
-        return candidate
+        return f"{base}{suffix}"
 
     def validate(self, attrs):
         role_value = self.context.get("role_value") or getattr(
