@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import apiClient from '@/utils/axios'
+import { refreshAccessToken as sharedRefreshAccessToken } from '@/utils/tokenRefresh'
 
 export interface User {
   id: number
@@ -51,13 +52,11 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async login(credentials: { account: string; password: string }) {
-      console.log('[Auth Store Login]', credentials.account)
       try {
         const response = await apiClient.post('/login/', {
           username: credentials.account,
           password: credentials.password,
         })
-        console.log('[Auth Store Login Success]', response.data)
         const { access, refresh, user } = response.data
 
         this.token = access
@@ -153,11 +152,8 @@ function scheduleTokenRefresh() {
   // 在过期前 5 分钟刷新
   const refreshTime = Math.max(0, timeUntilExpiry - 5 * 60 * 1000)
 
-  console.log(`[Auth Store] Token will refresh in ${Math.round(refreshTime / 1000)}s`)
-
   tokenRefreshTimer = window.setTimeout(async () => {
     try {
-      console.log('[Auth Store] Auto-refreshing token...')
       await refreshAccessToken()
     } catch (error) {
       console.error('[Auth Store] Auto-refresh failed:', error)
@@ -177,28 +173,16 @@ function clearTokenRefresh() {
 async function refreshAccessToken() {
   const authStore = useAuthStore()
   try {
-    const response = await apiClient.post('/refresh/', {
-      refresh: authStore.refreshToken,
-    })
-    
-    const newAccessToken = response.data.access
-    const newRefreshToken = response.data.refresh || authStore.refreshToken
+    const newAccessToken = await sharedRefreshAccessToken()
 
     authStore.token = newAccessToken
-    authStore.refreshToken = newRefreshToken
+    const newRefreshToken = localStorage.getItem('refreshToken')
+    if (newRefreshToken) authStore.refreshToken = newRefreshToken
 
     // 更新过期时间
     const expireTime = Date.now() + 60 * 60 * 1000
     authStore.tokenExpireTime = expireTime
-
-    // 保存到 localStorage
-    localStorage.setItem('accessToken', newAccessToken)
-    if (response.data.refresh) {
-      localStorage.setItem('refreshToken', newRefreshToken)
-    }
     localStorage.setItem('tokenExpireTime', expireTime.toString())
-
-    console.log('[Auth Store] Token refreshed successfully')
 
     // 设置下一次刷新
     scheduleTokenRefresh()

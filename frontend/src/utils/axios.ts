@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { refreshAccessToken, clearTokens } from './tokenRefresh'
 
 const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : ''
 const baseURL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : runtimeOrigin)
@@ -31,38 +32,22 @@ apiClient.interceptors.request.use(
 )
 
 apiClient.interceptors.response.use(
-  (response) => {
-    console.log('[Axios Response Success]', response.config.url, response.status)
-    return response
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config
-    console.log('[Axios Response Error]', originalRequest.url, error.response?.status)
     // 排除登录接口 - 登录失败不应触发 token 刷新
     if (originalRequest.url === '/login/' || originalRequest.url?.endsWith('/login/') || originalRequest.url?.includes('/login/')) {
-      console.log('[Skipping token refresh for login endpoint]')
       return Promise.reject(error)
     }
     if (error.response?.status === 401 && !originalRequest._retry) {
-      console.log('[Attempting token refresh]', originalRequest._retry)
-      const refreshToken = localStorage.getItem('refreshToken')
-      if (refreshToken) {
-        originalRequest._retry = true
-        try {
-          const response = await axios.post(baseURL + '/api/auth/refresh/', {
-            refresh: refreshToken,
-          })
-          const newAccessToken = response.data.access
-          localStorage.setItem('accessToken', newAccessToken)
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
-          console.log('[Token refreshed, retrying request]')
-          return apiClient(originalRequest)
-        } catch (refreshError) {
-          localStorage.removeItem('accessToken')
-          localStorage.removeItem('refreshToken')
-          window.location.href = '/login'
-          return Promise.reject(refreshError)
-        }
+      originalRequest._retry = true
+      try {
+        const newAccessToken = await refreshAccessToken()
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+        return apiClient(originalRequest)
+      } catch {
+        clearTokens()
+        return Promise.reject(error)
       }
     }
     return Promise.reject(error)
