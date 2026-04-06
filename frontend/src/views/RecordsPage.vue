@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import apiClient from '@/utils/apiClient'
 
 interface RecordViewItem {
@@ -31,43 +32,49 @@ interface PaginatedResponse<T> {
 }
 
 const loading = ref(false)
-const errorMessage = ref('')
-const filterMessage = ref('')
 const selectedRecord = ref<RecordViewItem | null>(null)
 const records = ref<RecordViewItem[]>([])
 const doctors = ref<UserOption[]>([])
 const patients = ref<UserOption[]>([])
 
-const dateFrom = ref('')
-const dateTo = ref('')
-const draftDateFrom = ref('')
-const draftDateTo = ref('')
-const showRangePicker = ref(false)
+const dateRange = ref<[Date, Date] | null>(null)
 const selectedPatientId = ref<number | null>(null)
 const selectedDoctorId = ref<number | null>(null)
 const page = ref(1)
-const pageSize = ref<10 | 20 | 50>(10)
+const pageSize = ref(10)
 const totalCount = ref(0)
 
 const displayName = (user: UserOption) => {
   return user.name?.trim() || user.username
 }
 
+const dateFrom = computed(() => {
+  if (!dateRange.value) return ''
+  const d = dateRange.value[0]
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+})
+
+const dateTo = computed(() => {
+  if (!dateRange.value) return ''
+  const d = dateRange.value[1]
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+})
+
 const hasActiveFilters = computed(
-  () => !!dateFrom.value || !!dateTo.value || !!selectedPatientId.value || !!selectedDoctorId.value || pageSize.value !== 10
+  () => !!dateRange.value || !!selectedPatientId.value || !!selectedDoctorId.value || pageSize.value !== 10
 )
 
 const recordsSorted = computed(() => {
   return records.value
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
-const pageStart = computed(() => (totalCount.value === 0 ? 0 : (page.value - 1) * pageSize.value + 1))
-const pageEnd = computed(() => Math.min(totalCount.value, page.value * pageSize.value))
+const showDetailDialog = computed({
+  get: () => selectedRecord.value !== null,
+  set: (val: boolean) => { if (!val) selectedRecord.value = null },
+})
 
 const fetchCompletedRecords = async () => {
   loading.value = true
-  errorMessage.value = ''
   try {
     const params: Record<string, string> = {
       status: 'completed',
@@ -100,7 +107,7 @@ const fetchCompletedRecords = async () => {
     records.value = data.results
     totalCount.value = data.count
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Failed to load medical records'
+    ElMessage.error(error.response?.data?.detail || 'Failed to load medical records')
   } finally {
     loading.value = false
   }
@@ -117,22 +124,12 @@ const fetchPatients = async () => {
 }
 
 const applyFilters = async () => {
-  if ((dateFrom.value && !dateTo.value) || (!dateFrom.value && dateTo.value)) {
-    filterMessage.value = 'Please select both start and end date for range filtering.'
-    return
-  }
-  filterMessage.value = ''
   page.value = 1
   await fetchCompletedRecords()
 }
 
 const resetFilters = async () => {
-  filterMessage.value = ''
-  dateFrom.value = ''
-  dateTo.value = ''
-  draftDateFrom.value = ''
-  draftDateTo.value = ''
-  showRangePicker.value = false
+  dateRange.value = null
   selectedDoctorId.value = null
   selectedPatientId.value = null
   page.value = 1
@@ -140,67 +137,19 @@ const resetFilters = async () => {
   await fetchCompletedRecords()
 }
 
-const goPrevPage = async () => {
-  if (page.value <= 1) return
-  page.value -= 1
+const handlePageChange = async (newPage: number) => {
+  page.value = newPage
   await fetchCompletedRecords()
 }
 
-const goNextPage = async () => {
-  if (page.value >= totalPages.value) return
-  page.value += 1
+const handleSizeChange = async (newSize: number) => {
+  pageSize.value = newSize
+  page.value = 1
   await fetchCompletedRecords()
-}
-
-const fillDateToToday = () => {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const today = `${year}-${month}-${day}`
-  dateTo.value = today
-  draftDateTo.value = today
-}
-
-const dateRangeLabel = computed(() => {
-  if (dateFrom.value && dateTo.value) {
-    return `${dateFrom.value.slice(5)} - ${dateTo.value.slice(5)}`
-  }
-  return 'Date range'
-})
-
-const openRangePicker = () => {
-  draftDateFrom.value = dateFrom.value
-  draftDateTo.value = dateTo.value
-  showRangePicker.value = true
-}
-
-const closeRangePicker = () => {
-  showRangePicker.value = false
-}
-
-const clearRangePicker = () => {
-  draftDateFrom.value = ''
-  draftDateTo.value = ''
-}
-
-const applyRangePicker = () => {
-  if (!draftDateFrom.value || !draftDateTo.value) {
-    filterMessage.value = 'Please select both start and end date for range filtering.'
-    return
-  }
-  filterMessage.value = ''
-  dateFrom.value = draftDateFrom.value
-  dateTo.value = draftDateTo.value
-  showRangePicker.value = false
 }
 
 const openDetail = (record: RecordViewItem) => {
   selectedRecord.value = record
-}
-
-const closeDetail = () => {
-  selectedRecord.value = null
 }
 
 onMounted(async () => {
@@ -211,15 +160,10 @@ onMounted(async () => {
   }
   await fetchCompletedRecords()
 })
-
-watch(pageSize, async () => {
-  page.value = 1
-  await fetchCompletedRecords()
-})
 </script>
 
 <template>
-  <div class="page">
+  <div class="page" v-loading="loading">
     <section class="toolbar">
       <div>
         <h2>Medical Records</h2>
@@ -227,109 +171,112 @@ watch(pageSize, async () => {
       </div>
     </section>
 
-    <section v-if="errorMessage" class="table-card" style="padding: 10px 12px; color: #c2334a;">
-      {{ errorMessage }}
-    </section>
-    <section v-if="filterMessage" class="table-card" style="padding: 10px 12px; color: #c2334a;">
-      {{ filterMessage }}
-    </section>
-
     <section class="filters records-filters">
-      <div class="date-range-picker">
-        <button class="range-trigger" type="button" @click="openRangePicker">
-          <span class="range-trigger-text">{{ dateRangeLabel }}</span>
-        </button>
-        <div v-if="showRangePicker" class="range-popover">
-          <label>Start date</label>
-          <input v-model="draftDateFrom" type="date" />
-          <label>End date</label>
-          <input v-model="draftDateTo" type="date" />
-          <div class="range-popover-actions">
-            <button class="ghost tiny-btn" type="button" @click="fillDateToToday">End: today</button>
-            <button class="ghost tiny-btn" type="button" @click="clearRangePicker">Clear</button>
-            <button class="ghost tiny-btn" type="button" @click="closeRangePicker">Cancel</button>
-            <button class="primary tiny-btn" type="button" @click="applyRangePicker">Apply range</button>
-          </div>
-        </div>
-      </div>
-      <select v-model.number="selectedPatientId">
-        <option :value="null">All patients</option>
-        <option v-for="patient in patients" :key="patient.id" :value="patient.id">{{ displayName(patient) }}</option>
-      </select>
-      <select v-model.number="selectedDoctorId">
-        <option :value="null">All doctors</option>
-        <option v-for="doctor in doctors" :key="doctor.id" :value="doctor.id">{{ displayName(doctor) }}</option>
-      </select>
-      <div class="tabs">
-        <button class="ghost" @click="applyFilters">Apply</button>
-        <button class="ghost" :disabled="!hasActiveFilters" @click="resetFilters">Reset</button>
-      </div>
+      <el-date-picker
+        v-model="dateRange"
+        type="daterange"
+        range-separator="to"
+        start-placeholder="Start date"
+        end-placeholder="End date"
+        clearable
+        style="width: 280px"
+      />
+      <el-select
+        v-model="selectedPatientId"
+        placeholder="All patients"
+        clearable
+        style="width: 180px"
+      >
+        <el-option
+          v-for="patient in patients"
+          :key="patient.id"
+          :label="displayName(patient)"
+          :value="patient.id"
+        />
+      </el-select>
+      <el-select
+        v-model="selectedDoctorId"
+        placeholder="All doctors"
+        clearable
+        style="width: 180px"
+      >
+        <el-option
+          v-for="doctor in doctors"
+          :key="doctor.id"
+          :label="displayName(doctor)"
+          :value="doctor.id"
+        />
+      </el-select>
+      <el-button @click="applyFilters">Apply</el-button>
+      <el-button :disabled="!hasActiveFilters" @click="resetFilters">Reset</el-button>
     </section>
 
     <section class="cards-grid">
-      <article
+      <el-card
         v-for="item in recordsSorted"
         :key="item.id"
         class="record-card record-thumbnail"
+        shadow="hover"
         role="button"
         tabindex="0"
         @click="openDetail(item)"
         @keydown.enter="openDetail(item)"
       >
-        <header>
-          <h3>{{ item.patient_name }}</h3>
-          <span class="badge completed">completed</span>
-        </header>
+        <template #header>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">{{ item.patient_name }}</h3>
+            <el-tag type="success" size="small">completed</el-tag>
+          </div>
+        </template>
         <p><strong>Doctor:</strong> {{ item.doctor_name }}</p>
-        <p><strong>Visit:</strong> {{ item.appointment_date }} · {{ item.appointment_time.slice(0, 5) }}</p>
+        <p><strong>Visit:</strong> {{ item.appointment_date }} &middot; {{ item.appointment_time.slice(0, 5) }}</p>
         <p class="record-clip"><strong>Diagnosis:</strong> {{ item.diagnosis_result || '-' }}</p>
-      </article>
+      </el-card>
 
-      <article v-if="!loading && recordsSorted.length === 0" class="record-card record-empty">
-        <p>No completed records available for current user scope.</p>
-      </article>
+      <el-empty
+        v-if="!loading && recordsSorted.length === 0"
+        description="No completed records available for current user scope."
+      />
     </section>
 
     <section class="table-card pagination-bar">
-      <div class="pagination-summary">
-        <strong>{{ pageStart }}-{{ pageEnd }}</strong>
-        <span>of {{ totalCount }} records</span>
-      </div>
-      <div class="pagination-controls">
-        <label class="page-size-wrap">
-          <span>Rows</span>
-          <select v-model.number="pageSize" class="page-size-select">
-          <option :value="10">10 / page</option>
-          <option :value="20">20 / page</option>
-          <option :value="50">50 / page</option>
-          </select>
-        </label>
-        <div class="tabs pagination-nav">
-          <button class="ghost pager-btn" :disabled="page <= 1" @click="goPrevPage">‹</button>
-          <span class="page-index">Page {{ page }} / {{ totalPages }}</span>
-          <button class="ghost pager-btn" :disabled="page >= totalPages" @click="goNextPage">›</button>
-        </div>
-      </div>
+      <el-pagination
+        :current-page="page"
+        :page-size="pageSize"
+        :total="totalCount"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
     </section>
 
-    <div v-if="selectedRecord" class="overlay" @click.self="closeDetail">
-      <div class="dialog record-detail-dialog">
-        <h3>Medical Record Detail</h3>
-        <div class="record-detail-grid">
-          <p><strong>Patient:</strong> {{ selectedRecord.patient_name }}</p>
-          <p><strong>Doctor:</strong> {{ selectedRecord.doctor_name }}</p>
-          <p><strong>Visit Date:</strong> {{ selectedRecord.appointment_date }}</p>
-          <p><strong>Visit Time:</strong> {{ selectedRecord.appointment_time.slice(0, 5) }}</p>
-          <p class="full-width"><strong>Chief Reason:</strong> {{ selectedRecord.reason || '-' }}</p>
-          <p class="full-width"><strong>Confirm Info:</strong> {{ selectedRecord.confirm_info || '-' }}</p>
-          <p class="full-width"><strong>Diagnosis Result:</strong> {{ selectedRecord.diagnosis_result || '-' }}</p>
-          <p class="full-width"><strong>Treatment Plan:</strong> {{ selectedRecord.treatment_plan || '-' }}</p>
-          <p class="full-width"><strong>Medical Advice:</strong> {{ selectedRecord.medical_advice || '-' }}</p>
-        </div>
-        <div class="actions">
-          <button class="ghost" @click="closeDetail">Close</button>
-        </div>
-      </div>
-    </div>
+    <el-dialog
+      v-model="showDetailDialog"
+      title="Medical Record Detail"
+      width="680px"
+      destroy-on-close
+    >
+      <el-descriptions v-if="selectedRecord" :column="2" border>
+        <el-descriptions-item label="Patient">{{ selectedRecord.patient_name }}</el-descriptions-item>
+        <el-descriptions-item label="Doctor">{{ selectedRecord.doctor_name }}</el-descriptions-item>
+        <el-descriptions-item label="Visit Date">{{ selectedRecord.appointment_date }}</el-descriptions-item>
+        <el-descriptions-item label="Visit Time">{{ selectedRecord.appointment_time.slice(0, 5) }}</el-descriptions-item>
+        <el-descriptions-item label="Chief Reason" :span="2">{{ selectedRecord.reason || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="Confirm Info" :span="2">{{ selectedRecord.confirm_info || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="Diagnosis Result" :span="2">{{ selectedRecord.diagnosis_result || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="Treatment Plan" :span="2">{{ selectedRecord.treatment_plan || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="Medical Advice" :span="2">{{ selectedRecord.medical_advice || '-' }}</el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="showDetailDialog = false">Close</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
+
+<style scoped>
+.record-card.record-thumbnail {
+  cursor: pointer;
+}
+</style>

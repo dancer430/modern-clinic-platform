@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import apiClient from '@/utils/apiClient'
 import { useAuthStore } from '@/stores/auth'
 
@@ -16,7 +18,6 @@ interface DoctorUser {
 
 const authStore = useAuthStore()
 const loading = ref(false)
-const errorMessage = ref('')
 const doctors = ref<DoctorUser[]>([])
 
 const query = ref('')
@@ -25,7 +26,7 @@ const showDialog = ref(false)
 const editingId = ref<number | null>(null)
 const showDeleteDialog = ref(false)
 const deleteTarget = ref<DoctorUser | null>(null)
-const submitAttempted = ref(false)
+const formRef = ref<FormInstance>()
 
 const form = ref({
   username: '',
@@ -34,6 +35,13 @@ const form = ref({
   phone: '',
   password: '',
 })
+
+const formRules: FormRules = {
+  username: [{ required: true, message: 'Username is required', trigger: 'blur' }],
+  name: [{ required: true, message: 'Name is required', trigger: 'blur' }],
+  email: [{ required: true, message: 'Email is required', trigger: 'blur' }],
+  phone: [{ required: true, message: 'Phone is required', trigger: 'blur' }],
+}
 
 const canManage = computed(() => authStore.isAdmin)
 
@@ -60,11 +68,10 @@ const fetchDoctors = async () => {
 
 const loadPageData = async () => {
   loading.value = true
-  errorMessage.value = ''
   try {
     await fetchDoctors()
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Failed to load doctors'
+    ElMessage.error(error.response?.data?.detail || 'Failed to load doctors')
   } finally {
     loading.value = false
   }
@@ -84,7 +91,6 @@ const openCreate = () => {
   if (!canManage.value) return
   editingId.value = null
   resetForm()
-  submitAttempted.value = false
   showDialog.value = true
 }
 
@@ -98,17 +104,8 @@ const openEdit = (doctor: DoctorUser) => {
     phone: doctor.phone,
     password: '',
   }
-  submitAttempted.value = false
   showDialog.value = true
 }
-
-const formInvalid = computed(
-  () =>
-    !form.value.username.trim() ||
-    !form.value.name.trim() ||
-    !form.value.email.trim() ||
-    !form.value.phone.trim()
-)
 
 const extractErrorMessage = (error: any, fallback: string) => {
   const data = error.response?.data
@@ -128,8 +125,9 @@ const extractErrorMessage = (error: any, fallback: string) => {
 }
 
 const saveDoctor = async () => {
-  submitAttempted.value = true
-  if (!canManage.value || formInvalid.value) return
+  if (!canManage.value) return
+  const valid = await formRef.value?.validate().catch(() => false)
+  if (!valid) return
 
   const payload = {
     username: form.value.username.trim(),
@@ -146,9 +144,10 @@ const saveDoctor = async () => {
       await apiClient.post('/api/auth/doctors/', payload)
     }
     showDialog.value = false
+    ElMessage.success(editingId.value ? 'Doctor updated' : 'Doctor created')
     await fetchDoctors()
   } catch (error: any) {
-    errorMessage.value = extractErrorMessage(error, 'Save doctor failed')
+    ElMessage.error(extractErrorMessage(error, 'Save doctor failed'))
   }
 }
 
@@ -170,10 +169,15 @@ const removeDoctor = async () => {
     await apiClient.delete(`/api/auth/doctors/${deleteTarget.value.id}/`)
     showDeleteDialog.value = false
     deleteTarget.value = null
+    ElMessage.success('Doctor deleted')
     await fetchDoctors()
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Delete doctor failed'
+    ElMessage.error(error.response?.data?.detail || 'Delete doctor failed')
   }
+}
+
+const onDialogClose = () => {
+  formRef.value?.resetFields()
 }
 
 onMounted(async () => {
@@ -188,80 +192,124 @@ onMounted(async () => {
         <h2>Doctors</h2>
         <p>{{ filteredDoctors.length }} doctor accounts</p>
       </div>
-      <button class="primary" :disabled="!canManage" @click="openCreate">+ Add Doctor</button>
+      <el-button type="primary" :disabled="!canManage" @click="openCreate">+ Add Doctor</el-button>
     </section>
 
-    <section v-if="errorMessage" class="table-card" style="padding: 10px 12px; color: #c2334a;">
-      {{ errorMessage }}
+    <el-alert
+      v-if="!canManage"
+      title="Only admin can create, edit, or delete doctor accounts."
+      type="warning"
+      show-icon
+      :closable="false"
+      style="margin-bottom: 16px"
+    />
+
+    <section class="toolbar" style="gap: 12px">
+      <el-input
+        v-model="query"
+        placeholder="Search doctor account"
+        clearable
+        style="max-width: 320px"
+      />
+      <el-select v-model="statusFilter" style="width: 160px">
+        <el-option label="All status" value="all" />
+        <el-option label="Active" value="active" />
+        <el-option label="Inactive" value="inactive" />
+      </el-select>
     </section>
 
-    <section v-if="!canManage" class="table-card" style="padding: 10px 12px; color: #9b6d00;">
-      Only admin can create, edit, or delete doctor accounts.
-    </section>
+    <el-table
+      v-loading="loading"
+      :data="filteredDoctors"
+      stripe
+      style="width: 100%; margin-top: 16px"
+    >
+      <el-table-column prop="name" label="Name" min-width="140">
+        <template #default="{ row }">{{ displayName(row) }}</template>
+      </el-table-column>
+      <el-table-column prop="email" label="Email" min-width="180">
+        <template #default="{ row }">{{ row.email || '-' }}</template>
+      </el-table-column>
+      <el-table-column prop="phone" label="Phone" min-width="130">
+        <template #default="{ row }">{{ row.phone || '-' }}</template>
+      </el-table-column>
+      <el-table-column label="Status" width="100">
+        <template #default="{ row }">
+          <el-tag :type="row.is_active ? 'success' : 'danger'" size="small">
+            {{ row.is_active ? 'active' : 'inactive' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="Actions" width="180" fixed="right">
+        <template #default="{ row }">
+          <el-button text :disabled="!canManage" @click="openEdit(row)">Edit</el-button>
+          <el-button text type="danger" :disabled="!canManage" @click="requestRemoveDoctor(row)">Delete</el-button>
+        </template>
+      </el-table-column>
+      <template #empty>
+        <el-empty description="No doctors found" />
+      </template>
+    </el-table>
 
-    <section class="filters">
-      <input v-model="query" placeholder="Search doctor account" />
-      <select v-model="statusFilter">
-        <option value="all">All status</option>
-        <option value="active">active</option>
-        <option value="inactive">inactive</option>
-      </select>
-    </section>
+    <!-- Delete confirmation dialog -->
+    <el-dialog
+      v-model="showDeleteDialog"
+      title="Delete Doctor Account"
+      width="460px"
+      :before-close="() => closeDeleteDialog()"
+    >
+      <p>
+        You are about to delete <strong>{{ deleteTarget ? displayName(deleteTarget) : '-' }}</strong>. This action cannot be undone.
+      </p>
+      <template #footer>
+        <el-button @click="closeDeleteDialog">Keep Account</el-button>
+        <el-button type="danger" @click="removeDoctor">Delete Permanently</el-button>
+      </template>
+    </el-dialog>
 
-    <section class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="doctor in filteredDoctors" :key="doctor.id">
-            <td>{{ displayName(doctor) }}</td>
-            <td>{{ doctor.email || '-' }}</td>
-            <td>{{ doctor.phone || '-' }}</td>
-            <td><span class="badge" :class="doctor.is_active ? 'confirmed' : 'cancelled'">{{ doctor.is_active ? 'active' : 'inactive' }}</span></td>
-            <td class="actions-cell">
-              <button class="ghost action-btn" :disabled="!canManage" @click="openEdit(doctor)">Edit</button>
-              <button class="danger action-btn" :disabled="!canManage" @click="requestRemoveDoctor(doctor)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <div v-if="showDeleteDialog" class="overlay" @click.self="closeDeleteDialog">
-      <div class="dialog" style="max-width: 460px;">
-        <h3>Delete Doctor Account</h3>
-        <p class="dialog-tip danger-text">
-          You are about to delete <strong>{{ deleteTarget ? displayName(deleteTarget) : '-' }}</strong>. This action cannot be undone.
-        </p>
-        <div class="actions">
-          <button class="ghost" @click="closeDeleteDialog">Keep Account</button>
-          <button class="danger" @click="removeDoctor">Delete Permanently</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showDialog" class="overlay" @click.self="showDialog = false; submitAttempted = false">
-      <div class="dialog">
-        <h3>{{ editingId ? 'Edit Doctor' : 'Add Doctor' }}</h3>
-        <div class="grid">
-          <input v-model="form.username" placeholder="Username *" :class="{ 'input-invalid': submitAttempted && !form.username.trim() }" />
-          <input v-model="form.name" placeholder="Name *" :class="{ 'input-invalid': submitAttempted && !form.name.trim() }" />
-          <input v-model="form.email" placeholder="Email *" :class="{ 'input-invalid': submitAttempted && !form.email.trim() }" />
-          <input v-model="form.phone" placeholder="Phone *" :class="{ 'input-invalid': submitAttempted && !form.phone.trim() }" />
-          <input v-model="form.password" type="password" :placeholder="editingId ? 'Reset password (optional)' : 'Initial password (optional)'" />
-        </div>
-        <div class="actions">
-          <button class="ghost" @click="showDialog = false; submitAttempted = false">Cancel</button>
-          <button class="primary" @click="saveDoctor">Save</button>
-        </div>
-      </div>
-    </div>
+    <!-- Create / Edit dialog -->
+    <el-dialog
+      v-model="showDialog"
+      :title="editingId ? 'Edit Doctor' : 'Add Doctor'"
+      width="560px"
+      @close="onDialogClose"
+    >
+      <el-form ref="formRef" :model="form" :rules="formRules" label-position="top">
+        <el-form-item label="Username" prop="username">
+          <el-input v-model="form.username" placeholder="Username" />
+        </el-form-item>
+        <el-form-item label="Name" prop="name">
+          <el-input v-model="form.name" placeholder="Name" />
+        </el-form-item>
+        <el-form-item label="Email" prop="email">
+          <el-input v-model="form.email" placeholder="Email" />
+        </el-form-item>
+        <el-form-item label="Phone" prop="phone">
+          <el-input v-model="form.phone" placeholder="Phone" />
+        </el-form-item>
+        <el-form-item label="Password">
+          <el-input
+            v-model="form.password"
+            type="password"
+            show-password
+            :placeholder="editingId ? 'Reset password (optional)' : 'Initial password (optional)'"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showDialog = false">Cancel</el-button>
+        <el-button type="primary" @click="saveDoctor">Save</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
+
+<style scoped>
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+</style>

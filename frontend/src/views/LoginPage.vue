@@ -2,18 +2,30 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import BrandLogo from '@/components/BrandLogo.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const loading = ref(false)
+const formRef = ref<FormInstance>()
 
 const form = reactive({
   account: 'admin',
   password: 'admin123456',
 })
 
+const rules = reactive<FormRules>({
+  account: [{ required: true, message: 'Please enter username or email', trigger: 'blur' }],
+  password: [{ required: true, message: 'Please enter password', trigger: 'blur' }],
+})
+
 const login = async () => {
+  if (!formRef.value) return
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
   loading.value = true
   const result = await authStore.login({
     account: form.account,
@@ -26,7 +38,7 @@ const login = async () => {
     return
   }
 
-  window.alert(result.error || 'Login failed')
+  ElMessage.error(result.error || 'Login failed')
 }
 </script>
 
@@ -47,15 +59,42 @@ const login = async () => {
         <h2>Welcome back</h2>
         <p>Sign in to your account to continue</p>
 
-        <form @submit.prevent="login" class="login-form">
-          <label>Username or Email</label>
-          <input v-model="form.account" type="text" autocomplete="username" placeholder="Enter username or email" />
+        <ElForm
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          class="login-form"
+          @submit.prevent="login"
+        >
+          <ElFormItem label="Username or Email" prop="account">
+            <ElInput
+              v-model="form.account"
+              autocomplete="username"
+              placeholder="Enter username or email"
+            />
+          </ElFormItem>
 
-          <label>Password</label>
-          <input v-model="form.password" type="password" autocomplete="current-password" placeholder="Enter password" />
+          <ElFormItem label="Password" prop="password">
+            <ElInput
+              v-model="form.password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Enter password"
+              show-password
+            />
+          </ElFormItem>
 
-          <button type="submit" class="btn-primary" :disabled="loading">{{ loading ? 'Signing In...' : 'Sign In' }}</button>
-        </form>
+          <ElFormItem>
+            <ElButton
+              type="primary"
+              :loading="loading"
+              native-type="submit"
+              class="btn-primary"
+            >
+              Sign In
+            </ElButton>
+          </ElFormItem>
+        </ElForm>
       </div>
     </section>
   </div>

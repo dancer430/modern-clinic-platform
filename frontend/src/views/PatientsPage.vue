@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import apiClient from '@/utils/apiClient'
 import { useAuthStore } from '@/stores/auth'
 
@@ -16,7 +18,6 @@ interface PatientUser {
 
 const authStore = useAuthStore()
 const loading = ref(false)
-const errorMessage = ref('')
 const patients = ref<PatientUser[]>([])
 
 const search = ref('')
@@ -25,14 +26,19 @@ const showDialog = ref(false)
 const editingId = ref<number | null>(null)
 const showDeleteDialog = ref(false)
 const deleteTarget = ref<PatientUser | null>(null)
-const submitAttempted = ref(false)
+const formRef = ref<FormInstance>()
 
-const form = ref({
+const form = reactive({
   username: '',
   name: '',
   email: '',
   phone: '',
   password: '',
+})
+
+const formRules = reactive<FormRules>({
+  username: [{ required: true, message: 'Username is required', trigger: 'blur' }],
+  name: [{ required: true, message: 'Name is required', trigger: 'blur' }],
 })
 
 const canManage = computed(() => authStore.isAdmin)
@@ -61,51 +67,45 @@ const fetchPatients = async () => {
 
 const loadPageData = async () => {
   loading.value = true
-  errorMessage.value = ''
   try {
     await fetchPatients()
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Failed to load patients'
+    ElMessage.error(error.response?.data?.detail || 'Failed to load patients')
   } finally {
     loading.value = false
   }
 }
 
 const resetForm = () => {
-  form.value = {
-    username: '',
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-  }
+  form.username = ''
+  form.name = ''
+  form.email = ''
+  form.phone = ''
+  form.password = ''
 }
 
 const openCreate = () => {
   if (!canCreatePatient.value) return
   editingId.value = null
   resetForm()
-  submitAttempted.value = false
   showDialog.value = true
 }
 
 const openEdit = (patient: PatientUser) => {
   if (!canManage.value) return
   editingId.value = patient.id
-  form.value = {
-    username: patient.username,
-    name: patient.name,
-    email: patient.email,
-    phone: patient.phone,
-    password: '',
-  }
-  submitAttempted.value = false
+  form.username = patient.username
+  form.name = patient.name
+  form.email = patient.email
+  form.phone = patient.phone
+  form.password = ''
   showDialog.value = true
 }
 
-const formInvalid = computed(
-  () => !form.value.username.trim() || !form.value.name.trim()
-)
+const closeDialog = () => {
+  showDialog.value = false
+  formRef.value?.resetFields()
+}
 
 const extractErrorMessage = (error: any, fallback: string) => {
   const data = error.response?.data
@@ -125,17 +125,18 @@ const extractErrorMessage = (error: any, fallback: string) => {
 }
 
 const savePatient = async () => {
-  submitAttempted.value = true
-  if (formInvalid.value) return
+  if (!formRef.value) return
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
   if (editingId.value && !canManage.value) return
   if (!editingId.value && !canCreatePatient.value) return
 
   const payload = {
-    username: form.value.username.trim(),
-    name: form.value.name.trim(),
-    email: form.value.email.trim(),
-    phone: form.value.phone.trim(),
-    ...(form.value.password.trim() ? { password: form.value.password.trim() } : {}),
+    username: form.username.trim(),
+    name: form.name.trim(),
+    email: form.email.trim(),
+    phone: form.phone.trim(),
+    ...(form.password.trim() ? { password: form.password.trim() } : {}),
   }
 
   try {
@@ -145,9 +146,10 @@ const savePatient = async () => {
       await apiClient.post('/api/auth/patients/', payload)
     }
     showDialog.value = false
+    ElMessage.success(editingId.value ? 'Patient updated' : 'Patient created')
     await fetchPatients()
   } catch (error: any) {
-    errorMessage.value = extractErrorMessage(error, 'Save patient failed')
+    ElMessage.error(extractErrorMessage(error, 'Save patient failed'))
   }
 }
 
@@ -169,9 +171,10 @@ const removePatient = async () => {
     await apiClient.delete(`/api/auth/patients/${deleteTarget.value.id}/`)
     showDeleteDialog.value = false
     deleteTarget.value = null
+    ElMessage.success('Patient deleted')
     await fetchPatients()
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Delete patient failed'
+    ElMessage.error(error.response?.data?.detail || 'Delete patient failed')
   }
 }
 
@@ -187,80 +190,132 @@ onMounted(async () => {
         <h2>Patients</h2>
         <p>{{ filteredPatients.length }} patient accounts</p>
       </div>
-      <button class="primary" :disabled="!canCreatePatient" @click="openCreate">+ Add Patient</button>
+      <ElButton type="primary" :disabled="!canCreatePatient" @click="openCreate">
+        + Add Patient
+      </ElButton>
     </section>
 
-    <section v-if="errorMessage" class="table-card" style="padding: 10px 12px; color: #c2334a;">
-      {{ errorMessage }}
-    </section>
-
-    <section v-if="!canManage" class="table-card" style="padding: 10px 12px; color: #9b6d00;">
+    <ElAlert
+      v-if="!canManage"
+      type="warning"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 16px;"
+    >
       Admin can create, edit, and delete patient accounts. Doctors can create patient accounts.
-    </section>
+    </ElAlert>
 
     <section class="filters">
-      <input v-model="search" placeholder="Search patient account" />
-      <select v-model="statusFilter">
-        <option value="all">All status</option>
-        <option value="active">active</option>
-        <option value="inactive">inactive</option>
-      </select>
+      <ElInput
+        v-model="search"
+        placeholder="Search patient account"
+        clearable
+        style="width: 280px;"
+      />
+      <ElSelect v-model="statusFilter" style="width: 160px;">
+        <ElOption label="All status" value="all" />
+        <ElOption label="Active" value="active" />
+        <ElOption label="Inactive" value="inactive" />
+      </ElSelect>
     </section>
 
     <section class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="patient in filteredPatients" :key="patient.id">
-            <td>{{ displayName(patient) }}</td>
-            <td>{{ patient.email || '-' }}</td>
-            <td>{{ patient.phone || '-' }}</td>
-            <td><span class="badge" :class="patient.is_active ? 'confirmed' : 'cancelled'">{{ patient.is_active ? 'active' : 'inactive' }}</span></td>
-            <td class="actions-cell">
-              <button class="ghost action-btn" :disabled="!canManage" @click="openEdit(patient)">Edit</button>
-              <button class="danger action-btn" :disabled="!canManage" @click="requestRemovePatient(patient)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <ElTable
+        v-loading="loading"
+        :data="filteredPatients"
+        style="width: 100%;"
+      >
+        <ElTableColumn prop="name" label="Name">
+          <template #default="{ row }">
+            {{ displayName(row) }}
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="email" label="Email">
+          <template #default="{ row }">
+            {{ row.email || '-' }}
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="phone" label="Phone">
+          <template #default="{ row }">
+            {{ row.phone || '-' }}
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="is_active" label="Status" width="120">
+          <template #default="{ row }">
+            <ElTag :type="row.is_active ? 'success' : 'danger'" size="small">
+              {{ row.is_active ? 'active' : 'inactive' }}
+            </ElTag>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn label="Actions" width="180">
+          <template #default="{ row }">
+            <ElButton text :disabled="!canManage" @click="openEdit(row)">Edit</ElButton>
+            <ElButton text type="danger" :disabled="!canManage" @click="requestRemovePatient(row)">
+              Delete
+            </ElButton>
+          </template>
+        </ElTableColumn>
+        <template #empty>
+          <ElEmpty description="No patients found" />
+        </template>
+      </ElTable>
     </section>
 
-    <div v-if="showDeleteDialog" class="overlay" @click.self="closeDeleteDialog">
-      <div class="dialog" style="max-width: 460px;">
-        <h3>Delete Patient Account</h3>
-        <p class="dialog-tip danger-text">
-          You are about to delete <strong>{{ deleteTarget ? displayName(deleteTarget) : '-' }}</strong>. This action cannot be undone.
-        </p>
-        <div class="actions">
-          <button class="ghost" @click="closeDeleteDialog">Keep Account</button>
-          <button class="danger" @click="removePatient">Delete Permanently</button>
-        </div>
-      </div>
-    </div>
+    <!-- Delete Confirmation Dialog -->
+    <ElDialog
+      v-model="showDeleteDialog"
+      title="Delete Patient Account"
+      width="460px"
+      :before-close="closeDeleteDialog"
+    >
+      <p>
+        You are about to delete <strong>{{ deleteTarget ? displayName(deleteTarget) : '-' }}</strong>.
+        This action cannot be undone.
+      </p>
+      <template #footer>
+        <ElButton @click="closeDeleteDialog">Keep Account</ElButton>
+        <ElButton type="danger" @click="removePatient">Delete Permanently</ElButton>
+      </template>
+    </ElDialog>
 
-    <div v-if="showDialog" class="overlay" @click.self="showDialog = false; submitAttempted = false">
-      <div class="dialog">
-        <h3>{{ editingId ? 'Edit Patient' : 'Add Patient' }}</h3>
-        <div class="grid">
-          <input v-model="form.username" placeholder="Username *" :class="{ 'input-invalid': submitAttempted && !form.username.trim() }" />
-          <input v-model="form.name" placeholder="Name *" :class="{ 'input-invalid': submitAttempted && !form.name.trim() }" />
-          <input v-model="form.email" placeholder="Email" />
-          <input v-model="form.phone" placeholder="Phone" />
-          <input v-model="form.password" type="password" :placeholder="editingId ? 'Reset password (optional)' : 'Initial password (optional)'" />
-        </div>
-        <div class="actions">
-          <button class="ghost" @click="showDialog = false; submitAttempted = false">Cancel</button>
-          <button class="primary" @click="savePatient">Save</button>
-        </div>
-      </div>
-    </div>
+    <!-- Create / Edit Dialog -->
+    <ElDialog
+      v-model="showDialog"
+      :title="editingId ? 'Edit Patient' : 'Add Patient'"
+      width="560px"
+      :before-close="closeDialog"
+    >
+      <ElForm
+        ref="formRef"
+        :model="form"
+        :rules="formRules"
+        label-position="top"
+      >
+        <ElFormItem label="Username" prop="username">
+          <ElInput v-model="form.username" placeholder="Username" />
+        </ElFormItem>
+        <ElFormItem label="Name" prop="name">
+          <ElInput v-model="form.name" placeholder="Name" />
+        </ElFormItem>
+        <ElFormItem label="Email" prop="email">
+          <ElInput v-model="form.email" placeholder="Email" />
+        </ElFormItem>
+        <ElFormItem label="Phone" prop="phone">
+          <ElInput v-model="form.phone" placeholder="Phone" />
+        </ElFormItem>
+        <ElFormItem label="Password" prop="password">
+          <ElInput
+            v-model="form.password"
+            type="password"
+            show-password
+            :placeholder="editingId ? 'Reset password (optional)' : 'Initial password (optional)'"
+          />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="closeDialog">Cancel</ElButton>
+        <ElButton type="primary" @click="savePatient">Save</ElButton>
+      </template>
+    </ElDialog>
   </div>
 </template>

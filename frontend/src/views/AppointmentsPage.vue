@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import apiClient from '@/utils/apiClient'
 import { useAuthStore } from '@/stores/auth'
 import { compressImage, validateImageFile } from '@/utils/imageUtils'
@@ -82,7 +83,6 @@ const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
-const errorMessage = ref('')
 
 const appointments = ref<AppointmentItem[]>([])
 const doctors = ref<UserOption[]>([])
@@ -172,7 +172,7 @@ const slotOptions = computed(() => {
       time,
       blocked,
       booked,
-      label: blocked ? `${time} · unavailable` : `${time} · ${booked} booked`,
+      label: blocked ? `${time} \u00b7 unavailable` : `${time} \u00b7 ${booked} booked`,
     }
   })
 })
@@ -188,6 +188,16 @@ const canConfirm = (item: AppointmentItem) =>
 
 const canComplete = (item: AppointmentItem) =>
   item.status === 'confirmed' && (authStore.isAdmin || (authStore.isDoctor && item.doctor === authStore.user?.id))
+
+const statusTagType = (s: AppointmentStatus) => {
+  switch (s) {
+    case 'pending': return 'warning'
+    case 'confirmed': return ''
+    case 'completed': return 'success'
+    case 'cancelled': return 'danger'
+    default: return 'info'
+  }
+}
 
 const fetchAppointments = async () => {
   const params: Record<string, string | number> = {
@@ -229,11 +239,10 @@ const fetchScheduleSlots = async () => {
 
 const loadPageData = async () => {
   loading.value = true
-  errorMessage.value = ''
   try {
     await Promise.all([fetchAppointments(), fetchDoctors(), fetchPatients(), fetchScheduleSlots()])
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Failed to load appointment data'
+    ElMessage.error(error.response?.data?.detail || 'Failed to load appointment data')
   } finally {
     loading.value = false
   }
@@ -251,15 +260,14 @@ const resetListFilters = async () => {
   await fetchAppointments()
 }
 
-const goPrevPage = async () => {
-  if (page.value <= 1) return
-  page.value -= 1
+const handlePageChange = async (newPage: number) => {
+  page.value = newPage
   await fetchAppointments()
 }
 
-const goNextPage = async () => {
-  if (page.value >= totalPages.value) return
-  page.value += 1
+const handleSizeChange = async (newSize: number) => {
+  pageSize.value = newSize as 10 | 20 | 50
+  page.value = 1
   await fetchAppointments()
 }
 
@@ -308,9 +316,10 @@ const createAppointment = async () => {
     })
     showDialog.value = false
     createSubmitAttempted.value = false
+    ElMessage.success('Appointment created')
     await fetchAppointments()
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Create appointment failed'
+    ElMessage.error(error.response?.data?.detail || 'Create appointment failed')
   }
 }
 
@@ -336,9 +345,10 @@ const submitConfirm = async () => {
     showConfirmDialog.value = false
     confirmTargetId.value = null
     confirmInfoForm.value = ''
+    ElMessage.success('Appointment confirmed')
     await fetchAppointments()
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Confirm appointment failed'
+    ElMessage.error(error.response?.data?.detail || 'Confirm appointment failed')
   }
 }
 
@@ -364,7 +374,7 @@ const processCompleteAttachments = async (files: File[]) => {
     for (const file of files) {
       const validation = validateImageFile(file)
       if (!validation.valid) {
-        errorMessage.value = validation.error || 'Invalid image file'
+        ElMessage.error(validation.error || 'Invalid image file')
         continue
       }
 
@@ -377,7 +387,7 @@ const processCompleteAttachments = async (files: File[]) => {
       })
     }
   } catch {
-    errorMessage.value = 'Attachment processing failed'
+    ElMessage.error('Attachment processing failed')
   }
 }
 
@@ -430,6 +440,7 @@ const submitComplete = async () => {
       createNextAppointment: false,
       attachments: [],
     }
+    ElMessage.success('Appointment completed')
     await fetchAppointments()
 
     if (shouldCreateNext) {
@@ -439,7 +450,7 @@ const submitComplete = async () => {
       })
     }
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Complete appointment failed'
+    ElMessage.error(error.response?.data?.detail || 'Complete appointment failed')
   }
 }
 
@@ -461,9 +472,10 @@ const cancelAppointment = async () => {
     await apiClient.put(`/api/appointments/${cancelTargetId.value}/cancel/`, {})
     showCancelDialog.value = false
     cancelTargetId.value = null
+    ElMessage.success('Appointment cancelled')
     await fetchAppointments()
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Cancel appointment failed'
+    ElMessage.error(error.response?.data?.detail || 'Cancel appointment failed')
   }
 }
 
@@ -490,174 +502,241 @@ watch(
         <h2>Appointments</h2>
         <p>Limited slots: 08:00-11:30 and 14:00-17:00 (every 30 minutes).</p>
       </div>
-      <button class="primary" @click="openCreate">+ New Appointment</button>
-    </section>
-
-    <section v-if="errorMessage" class="table-card" style="padding: 10px 12px; color: #c2334a;">
-      {{ errorMessage }}
+      <ElButton type="primary" @click="openCreate">+ New Appointment</ElButton>
     </section>
 
     <section class="filters appointments-filters">
-      <input v-model="search" placeholder="Search patient/doctor/reason" @keyup.enter="applyListFilters" />
-      <select v-model="status">
-        <option value="all">All status</option>
-        <option value="pending">pending</option>
-        <option value="confirmed">confirmed</option>
-        <option value="completed">completed</option>
-        <option value="cancelled">cancelled</option>
-      </select>
-      <div class="tabs">
-        <button class="ghost" @click="applyListFilters">Search</button>
-        <button class="ghost" :disabled="!search && status === 'all'" @click="resetListFilters">Reset</button>
-      </div>
+      <ElInput
+        v-model="search"
+        placeholder="Search patient/doctor/reason"
+        clearable
+        style="width: 280px;"
+        @keyup.enter="applyListFilters"
+      />
+      <ElSelect v-model="status" style="width: 160px;">
+        <ElOption label="All status" value="all" />
+        <ElOption label="pending" value="pending" />
+        <ElOption label="confirmed" value="confirmed" />
+        <ElOption label="completed" value="completed" />
+        <ElOption label="cancelled" value="cancelled" />
+      </ElSelect>
+      <ElButton @click="applyListFilters">Search</ElButton>
+      <ElButton :disabled="!search && status === 'all'" @click="resetListFilters">Reset</ElButton>
     </section>
 
     <section class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>Patient</th>
-            <th>Doctor</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in filtered" :key="item.id">
-            <td>{{ item.patient_name }}</td>
-            <td>{{ item.doctor_name }}</td>
-            <td>{{ item.appointment_date }} · {{ item.appointment_time.slice(0, 5) }}</td>
-            <td><span class="badge" :class="item.status">{{ item.status }}</span></td>
-            <td class="actions-cell">
-              <template v-if="item.status === 'pending'">
-                <button
-                  class="ghost action-btn"
-                  :disabled="!canConfirm(item)"
-                  :title="canConfirm(item) ? '' : 'Only responsible doctor can confirm'"
-                  @click="openConfirmDialog(item.id)"
-                >
-                  Confirm
-                </button>
-                <button class="danger action-btn" @click="openCancelDialog(item.id)">Cancel</button>
-              </template>
-              <template v-else-if="item.status === 'confirmed'">
-                <button
-                  class="ghost action-btn"
-                  :disabled="!canComplete(item)"
-                  :title="canComplete(item) ? '' : 'Only responsible doctor can complete'"
-                  @click="openCompleteDialog(item.id)"
-                >
-                  Complete
-                </button>
-              </template>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <ElTable
+        v-loading="loading"
+        :data="filtered"
+        style="width: 100%;"
+      >
+        <ElTableColumn prop="patient_name" label="Patient" />
+        <ElTableColumn prop="doctor_name" label="Doctor" />
+        <ElTableColumn label="Date">
+          <template #default="{ row }">
+            {{ row.appointment_date }} &middot; {{ row.appointment_time.slice(0, 5) }}
+          </template>
+        </ElTableColumn>
+        <ElTableColumn label="Status" width="130">
+          <template #default="{ row }">
+            <ElTag :type="statusTagType(row.status)" size="small">{{ row.status }}</ElTag>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn label="Actions" width="200">
+          <template #default="{ row }">
+            <template v-if="row.status === 'pending'">
+              <ElButton
+                text
+                :disabled="!canConfirm(row)"
+                :title="canConfirm(row) ? '' : 'Only responsible doctor can confirm'"
+                @click="openConfirmDialog(row.id)"
+              >
+                Confirm
+              </ElButton>
+              <ElButton text type="danger" @click="openCancelDialog(row.id)">Cancel</ElButton>
+            </template>
+            <template v-else-if="row.status === 'confirmed'">
+              <ElButton
+                text
+                :disabled="!canComplete(row)"
+                :title="canComplete(row) ? '' : 'Only responsible doctor can complete'"
+                @click="openCompleteDialog(row.id)"
+              >
+                Complete
+              </ElButton>
+            </template>
+          </template>
+        </ElTableColumn>
+        <template #empty>
+          <ElEmpty description="No appointments found" />
+        </template>
+      </ElTable>
     </section>
 
-    <section class="table-card pagination-bar">
-      <div class="pagination-summary">
-        <strong>{{ pageStart }}-{{ pageEnd }}</strong>
-        <span>of {{ totalCount }} records</span>
-      </div>
-      <div class="pagination-controls">
-        <label class="page-size-wrap">
-          <span>Rows</span>
-          <select v-model.number="pageSize" class="page-size-select">
-          <option :value="10">10 / page</option>
-          <option :value="20">20 / page</option>
-          <option :value="50">50 / page</option>
-          </select>
-        </label>
-        <div class="tabs pagination-nav">
-          <button class="ghost pager-btn" :disabled="page <= 1" @click="goPrevPage">‹</button>
-          <span class="page-index">Page {{ page }} / {{ totalPages }}</span>
-          <button class="ghost pager-btn" :disabled="page >= totalPages" @click="goNextPage">›</button>
-        </div>
-      </div>
+    <section class="table-card" style="display: flex; justify-content: flex-end; padding: 12px 16px;">
+      <ElPagination
+        :current-page="page"
+        :page-size="pageSize"
+        :total="totalCount"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
     </section>
 
-    <div v-if="showDialog" class="overlay" @click.self="showDialog = false; createSubmitAttempted = false">
-      <div class="dialog">
-        <h3>New Appointment</h3>
-        <div class="grid">
-          <select v-model.number="form.patient" :class="{ 'input-invalid': createSubmitAttempted && !form.patient }">
-            <option :value="null">Select patient</option>
-            <option v-for="patient in patients" :key="patient.id" :value="patient.id">{{ displayName(patient) }}</option>
-          </select>
-          <select v-model.number="form.doctor" :class="{ 'input-invalid': createSubmitAttempted && !form.doctor }">
-            <option :value="null">Select doctor</option>
-            <option v-for="doctor in doctors" :key="doctor.id" :value="doctor.id">{{ displayName(doctor) }}</option>
-          </select>
-          <input v-model="form.date" type="date" :class="{ 'input-invalid': createSubmitAttempted && !form.date }" />
-          <select v-model="form.time" :class="{ 'input-invalid': createSubmitAttempted && !form.time }">
-            <option value="">Select time slot</option>
-            <option v-for="slot in slotOptions" :key="slot.time" :value="slot.time" :disabled="slot.blocked">
-              {{ slot.label }}
-            </option>
-          </select>
-          <textarea v-model="form.reason" placeholder="Reason"></textarea>
-        </div>
+    <!-- Create Dialog -->
+    <ElDialog
+      v-model="showDialog"
+      title="New Appointment"
+      width="600px"
+      :before-close="() => { showDialog = false; createSubmitAttempted = false }"
+    >
+      <ElForm label-position="top">
+        <ElFormItem label="Patient" required>
+          <ElSelect
+            v-model="form.patient"
+            placeholder="Select patient"
+            style="width: 100%;"
+            :class="{ 'is-error': createSubmitAttempted && !form.patient }"
+          >
+            <ElOption
+              v-for="patient in patients"
+              :key="patient.id"
+              :label="displayName(patient)"
+              :value="patient.id"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="Doctor" required>
+          <ElSelect
+            v-model="form.doctor"
+            placeholder="Select doctor"
+            style="width: 100%;"
+            :class="{ 'is-error': createSubmitAttempted && !form.doctor }"
+          >
+            <ElOption
+              v-for="doctor in doctors"
+              :key="doctor.id"
+              :label="displayName(doctor)"
+              :value="doctor.id"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="Date" required>
+          <ElDatePicker
+            v-model="form.date"
+            type="date"
+            placeholder="Pick a date"
+            value-format="YYYY-MM-DD"
+            style="width: 100%;"
+            :class="{ 'is-error': createSubmitAttempted && !form.date }"
+          />
+        </ElFormItem>
+        <ElFormItem label="Time Slot" required>
+          <ElSelect
+            v-model="form.time"
+            placeholder="Select time slot"
+            style="width: 100%;"
+            :class="{ 'is-error': createSubmitAttempted && !form.time }"
+          >
+            <ElOption
+              v-for="slot in slotOptions"
+              :key="slot.time"
+              :label="slot.label"
+              :value="slot.time"
+              :disabled="slot.blocked"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="Reason">
+          <ElInput v-model="form.reason" type="textarea" :rows="3" placeholder="Reason" />
+        </ElFormItem>
+      </ElForm>
 
-        <div class="slot-hint-card">
-          <p>Booked count by time for selected doctor/date</p>
-          <ul>
-            <li v-for="slot in slotOptions" :key="slot.time">
-              <span>{{ slot.time }}</span>
-              <span>{{ slot.blocked ? 'Unavailable by schedule' : `${slot.booked} booked` }}</span>
-            </li>
-          </ul>
-        </div>
-
-        <div class="actions">
-          <button class="ghost" @click="showDialog = false; createSubmitAttempted = false">Cancel</button>
-          <button class="primary" @click="createAppointment">Create</button>
-        </div>
+      <div class="slot-hint-card">
+        <p>Booked count by time for selected doctor/date</p>
+        <ul>
+          <li v-for="slot in slotOptions" :key="slot.time">
+            <span>{{ slot.time }}</span>
+            <span>{{ slot.blocked ? 'Unavailable by schedule' : `${slot.booked} booked` }}</span>
+          </li>
+        </ul>
       </div>
-    </div>
 
-    <div v-if="showConfirmDialog" class="overlay" @click.self="showConfirmDialog = false">
-      <div class="dialog">
-        <h3>Confirm Appointment</h3>
-        <p class="dialog-tip">Record preliminary diagnosis as Confirm Info (max 500 chars).</p>
-        <textarea v-model="confirmInfoForm" class="confirm-info-input" maxlength="500" placeholder="Enter preliminary diagnosis..."></textarea>
-        <div class="confirm-info-footer">
-          <span :class="{ 'danger-text': confirmInfoTooLong }">{{ confirmInfoForm.length }}/500</span>
-        </div>
-        <div class="actions">
-          <button class="ghost" @click="showConfirmDialog = false">Cancel</button>
-          <button class="primary" :disabled="!confirmInfoForm.trim() || confirmInfoTooLong" @click="submitConfirm">Submit Confirm</button>
-        </div>
-      </div>
-    </div>
+      <template #footer>
+        <ElButton @click="showDialog = false; createSubmitAttempted = false">Cancel</ElButton>
+        <ElButton type="primary" @click="createAppointment">Create</ElButton>
+      </template>
+    </ElDialog>
 
-    <div v-if="showCompleteDialog" class="overlay" @click.self="showCompleteDialog = false; completeSubmitAttempted = false">
-      <div class="dialog">
-        <h3>Complete Appointment</h3>
-        <p class="dialog-tip">Diagnosis Result and Treatment Plan are required.</p>
-        <div class="appointment-complete-form">
-          <label class="field-label">Diagnosis Result <span class="required-mark">*</span></label>
-          <textarea
+    <!-- Confirm Dialog -->
+    <ElDialog
+      v-model="showConfirmDialog"
+      title="Confirm Appointment"
+      width="520px"
+    >
+      <p style="margin-bottom: 12px; color: var(--el-text-color-secondary);">
+        Record preliminary diagnosis as Confirm Info (max 500 chars).
+      </p>
+      <ElInput
+        v-model="confirmInfoForm"
+        type="textarea"
+        :rows="4"
+        maxlength="500"
+        show-word-limit
+        placeholder="Enter preliminary diagnosis..."
+      />
+      <template #footer>
+        <ElButton @click="showConfirmDialog = false">Cancel</ElButton>
+        <ElButton
+          type="primary"
+          :disabled="!confirmInfoForm.trim() || confirmInfoTooLong"
+          @click="submitConfirm"
+        >
+          Submit Confirm
+        </ElButton>
+      </template>
+    </ElDialog>
+
+    <!-- Complete Dialog -->
+    <ElDialog
+      v-model="showCompleteDialog"
+      title="Complete Appointment"
+      width="620px"
+      :before-close="() => { showCompleteDialog = false; completeSubmitAttempted = false }"
+    >
+      <p style="margin-bottom: 12px; color: var(--el-text-color-secondary);">
+        Diagnosis Result and Treatment Plan are required.
+      </p>
+      <ElForm label-position="top">
+        <ElFormItem label="Diagnosis Result" required>
+          <ElInput
             v-model="completeForm.diagnosisResult"
-            class="confirm-info-input"
-            :class="{ 'input-invalid': completeSubmitAttempted && !completeForm.diagnosisResult.trim() }"
+            type="textarea"
+            :rows="3"
             placeholder="Enter diagnosis result"
-          ></textarea>
-
-          <label class="field-label">Treatment Plan <span class="required-mark">*</span></label>
-          <textarea
+            :class="{ 'is-error': completeSubmitAttempted && !completeForm.diagnosisResult.trim() }"
+          />
+        </ElFormItem>
+        <ElFormItem label="Treatment Plan" required>
+          <ElInput
             v-model="completeForm.treatmentPlan"
-            class="confirm-info-input"
-            :class="{ 'input-invalid': completeSubmitAttempted && !completeForm.treatmentPlan.trim() }"
+            type="textarea"
+            :rows="3"
             placeholder="Enter treatment plan"
-          ></textarea>
-
-          <label class="field-label">Medical Advice</label>
-          <textarea v-model="completeForm.medicalAdvice" class="confirm-info-input" placeholder="Enter medical advice"></textarea>
-
-          <label class="field-label">Attachments (image)</label>
+            :class="{ 'is-error': completeSubmitAttempted && !completeForm.treatmentPlan.trim() }"
+          />
+        </ElFormItem>
+        <ElFormItem label="Medical Advice">
+          <ElInput
+            v-model="completeForm.medicalAdvice"
+            type="textarea"
+            :rows="3"
+            placeholder="Enter medical advice"
+          />
+        </ElFormItem>
+        <ElFormItem label="Attachments (image)">
           <div class="complete-attachment-area">
             <div
               class="file-uploader"
@@ -678,46 +757,114 @@ watch(
                 class="hidden-file-input"
                 @change="onCompleteAttachmentChange"
               />
-              <span class="file-uploader-icon">⬆</span>
+              <span class="file-uploader-icon">&#x2B06;</span>
               <div>
                 <p class="file-uploader-title">Upload attachments</p>
                 <p class="file-uploader-subtitle">Images only, auto-compressed before submit</p>
               </div>
             </div>
-            <p v-if="showSqliteAttachmentHint" class="dialog-tip" style="margin: 4px 0 0;">
+            <p v-if="showSqliteAttachmentHint" style="margin: 4px 0 0; color: var(--el-text-color-secondary); font-size: 12px;">
               Current environment is development (SQLite). Attachment submission will not take effect.
             </p>
             <ul v-if="completeForm.attachments.length > 0" class="complete-attachment-list">
               <li v-for="(item, index) in completeForm.attachments" :key="`${item.file_name}-${index}`">
-                <span>{{ item.file_name }} · {{ item.compressed_size }}KB</span>
-                <button type="button" class="ghost" @click="removeCompleteAttachment(index)">Remove</button>
+                <span>{{ item.file_name }} &middot; {{ item.compressed_size }}KB</span>
+                <ElButton text type="danger" size="small" @click="removeCompleteAttachment(index)">Remove</ElButton>
               </li>
             </ul>
           </div>
+        </ElFormItem>
+        <ElFormItem>
+          <ElCheckbox v-model="completeForm.createNextAppointment">
+            Create next appointment after submit
+          </ElCheckbox>
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="showCompleteDialog = false; completeSubmitAttempted = false">Cancel</ElButton>
+        <ElButton type="primary" @click="submitComplete">Submit Complete</ElButton>
+      </template>
+    </ElDialog>
 
-          <div class="next-appointment-row">
-            <label class="checkbox-label">
-              <input v-model="completeForm.createNextAppointment" type="checkbox" />
-              Create next appointment after submit
-            </label>
-          </div>
-        </div>
-        <div class="actions">
-          <button class="ghost" @click="showCompleteDialog = false; completeSubmitAttempted = false">Cancel</button>
-          <button class="primary" @click="submitComplete">Submit Complete</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showCancelDialog" class="overlay" @click.self="closeCancelDialog">
-      <div class="dialog" style="max-width: 460px;">
-        <h3>Cancel Appointment</h3>
-        <p class="dialog-tip danger-text">{{ cancelDialogMessage }}</p>
-        <div class="actions">
-          <button class="ghost" @click="closeCancelDialog">Keep Appointment</button>
-          <button class="danger" @click="cancelAppointment">Confirm Cancel</button>
-        </div>
-      </div>
-    </div>
+    <!-- Cancel Dialog -->
+    <ElDialog
+      v-model="showCancelDialog"
+      title="Cancel Appointment"
+      width="460px"
+      :before-close="closeCancelDialog"
+    >
+      <p style="color: var(--el-color-danger);">{{ cancelDialogMessage }}</p>
+      <template #footer>
+        <ElButton @click="closeCancelDialog">Keep Appointment</ElButton>
+        <ElButton type="danger" @click="cancelAppointment">Confirm Cancel</ElButton>
+      </template>
+    </ElDialog>
   </div>
 </template>
+
+<style scoped>
+.slot-hint-card {
+  margin-top: 8px;
+  padding: 12px;
+  background: var(--el-fill-color-light, #f5f7fa);
+  border-radius: 4px;
+  font-size: 13px;
+}
+.slot-hint-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 4px;
+}
+.slot-hint-card li {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+.complete-attachment-area {
+  width: 100%;
+}
+.file-uploader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 2px dashed var(--el-border-color, #dcdfe6);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.file-uploader:hover,
+.file-uploader.dragging {
+  border-color: var(--el-color-primary);
+}
+.file-uploader-icon {
+  font-size: 24px;
+}
+.file-uploader-title {
+  font-weight: 500;
+  margin: 0;
+}
+.file-uploader-subtitle {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  margin: 2px 0 0;
+}
+.hidden-file-input {
+  display: none;
+}
+.complete-attachment-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.complete-attachment-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 13px;
+}
+</style>

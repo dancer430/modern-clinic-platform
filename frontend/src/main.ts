@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import 'element-plus/dist/index.css'
 import router from './router'
 import { useAuthStore } from './stores/auth'
 import './style.css'

@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import type { UploadFile } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import apiClient from '@/utils/axios'
 import { useAuthStore } from '@/stores/auth'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
 
 const authStore = useAuthStore()
 const loading = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
-const avatarInputRef = ref<HTMLInputElement | null>(null)
-const avatarUploaderDragging = ref(false)
+const avatarUploadRef = ref()
+const platformLogoUploadRef = ref()
 const passwordSubmitAttempted = ref(false)
-const platformLogoInputRef = ref<HTMLInputElement | null>(null)
-const platformLogoDragging = ref(false)
 
 const { loadPlatformBrand } = usePlatformBrand()
 
@@ -61,6 +60,15 @@ const passwordStrength = computed(() => {
   return { score, label: 'Very strong', percent: 100, tone: 'very-strong' }
 })
 
+const strengthColor = computed(() => {
+  const tone = passwordStrength.value.tone
+  if (tone === 'weak') return '#F56C6C'
+  if (tone === 'medium') return '#E6A23C'
+  if (tone === 'strong') return '#409EFF'
+  if (tone === 'very-strong') return '#67C23A'
+  return '#C0C4CC'
+})
+
 const displayName = computed(() => {
   return profileForm.value.name.trim() || authStore.user?.username || 'User'
 })
@@ -69,7 +77,6 @@ const isAdmin = computed(() => authStore.isAdmin)
 
 const loadProfile = async () => {
   loading.value = true
-  errorMessage.value = ''
   try {
     const response = await apiClient.get('/me/')
     const user = response.data
@@ -83,7 +90,7 @@ const loadProfile = async () => {
       avatar_size: user.avatar_size ?? null,
     }
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Failed to load profile'
+    ElMessage.error(error.response?.data?.detail || 'Failed to load profile')
   } finally {
     loading.value = false
   }
@@ -104,24 +111,16 @@ const loadPlatform = async () => {
   }
 }
 
-const onAvatarChange = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  await processAvatarFile(file)
-  input.value = ''
-}
-
 const processAvatarFile = async (file: File) => {
   const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
   if (!allowedTypes.includes(file.type)) {
-    errorMessage.value = 'Avatar must be PNG or JPG'
+    ElMessage.error('Avatar must be PNG or JPG')
     return
   }
 
   const sizeKB = Math.ceil(file.size / 1024)
   if (sizeKB > 1024) {
-    errorMessage.value = 'Avatar size must be <= 1MB'
+    ElMessage.error('Avatar size must be <= 1MB')
     return
   }
 
@@ -137,18 +136,13 @@ const processAvatarFile = async (file: File) => {
   profileForm.value.avatar_size = sizeKB
 }
 
-const openAvatarPicker = () => {
-  avatarInputRef.value?.click()
-}
-
-const onAvatarUploaderDrop = async (event: DragEvent) => {
-  avatarUploaderDragging.value = false
-  const file = event.dataTransfer?.files?.[0]
-  if (!file) return
-  try {
-    await processAvatarFile(file)
-  } catch {
-    errorMessage.value = 'Failed to read avatar file'
+const onAvatarUploadChange = async (uploadFile: UploadFile) => {
+  if (uploadFile.raw) {
+    await processAvatarFile(uploadFile.raw)
+  }
+  // Clear the upload file list so the slot stays clean
+  if (avatarUploadRef.value) {
+    avatarUploadRef.value.clearFiles()
   }
 }
 
@@ -161,13 +155,13 @@ const removeAvatar = () => {
 const processPlatformLogoFile = async (file: File) => {
   const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
   if (!allowedTypes.includes(file.type)) {
-    errorMessage.value = 'Platform logo must be PNG or JPG'
+    ElMessage.error('Platform logo must be PNG or JPG')
     return
   }
 
   const sizeKB = Math.ceil(file.size / 1024)
   if (sizeKB > 1024) {
-    errorMessage.value = 'Platform logo size must be <= 1MB'
+    ElMessage.error('Platform logo size must be <= 1MB')
     return
   }
 
@@ -183,23 +177,13 @@ const processPlatformLogoFile = async (file: File) => {
   platformForm.value.logo_size = sizeKB
 }
 
-const onPlatformLogoChange = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  await processPlatformLogoFile(file)
-  input.value = ''
-}
-
-const openPlatformLogoPicker = () => {
-  platformLogoInputRef.value?.click()
-}
-
-const onPlatformLogoDrop = async (event: DragEvent) => {
-  platformLogoDragging.value = false
-  const file = event.dataTransfer?.files?.[0]
-  if (!file) return
-  await processPlatformLogoFile(file)
+const onPlatformLogoUploadChange = async (uploadFile: UploadFile) => {
+  if (uploadFile.raw) {
+    await processPlatformLogoFile(uploadFile.raw)
+  }
+  if (platformLogoUploadRef.value) {
+    platformLogoUploadRef.value.clearFiles()
+  }
 }
 
 const removePlatformLogo = () => {
@@ -210,36 +194,30 @@ const removePlatformLogo = () => {
 
 const savePlatform = async () => {
   if (!isAdmin.value) return
-  errorMessage.value = ''
-  successMessage.value = ''
   try {
     await apiClient.patch('/platform/', platformForm.value)
     await loadPlatformBrand(true)
-    successMessage.value = 'Platform branding updated successfully'
+    ElMessage.success('Platform branding updated successfully')
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Failed to update platform branding'
+    ElMessage.error(error.response?.data?.detail || 'Failed to update platform branding')
   }
 }
 
 const saveProfile = async () => {
-  errorMessage.value = ''
-  successMessage.value = ''
   try {
     const response = await apiClient.patch('/me/', profileForm.value)
     authStore.setUser(response.data)
-    successMessage.value = 'Profile updated successfully'
+    ElMessage.success('Profile updated successfully')
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Failed to update profile'
+    ElMessage.error(error.response?.data?.detail || 'Failed to update profile')
   }
 }
 
 const changePassword = async () => {
-  errorMessage.value = ''
-  successMessage.value = ''
   passwordSubmitAttempted.value = true
 
   if (!passwordForm.value.current_password || !passwordForm.value.new_password || !passwordForm.value.confirm_password) {
-    errorMessage.value = 'Please complete all password fields'
+    ElMessage.error('Please complete all password fields')
     return
   }
 
@@ -251,9 +229,9 @@ const changePassword = async () => {
       confirm_password: '',
     }
     passwordSubmitAttempted.value = false
-    successMessage.value = 'Password updated successfully'
+    ElMessage.success('Password updated successfully')
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Failed to update password'
+    ElMessage.error(error.response?.data?.detail || 'Failed to update password')
   }
 }
 
@@ -263,7 +241,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="page profile-page">
+  <div class="page profile-page" v-loading="loading">
     <section class="toolbar">
       <div>
         <h2>Personal Center</h2>
@@ -271,151 +249,178 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section v-if="errorMessage" class="table-card" style="padding: 10px 12px; color: #c2334a;">
-      {{ errorMessage }}
-    </section>
-    <section v-if="successMessage" class="table-card" style="padding: 10px 12px; color: #22815c;">
-      {{ successMessage }}
-    </section>
-
     <section class="profile-grid">
-      <article class="table-card profile-card">
-        <h3>Profile</h3>
+      <el-card shadow="never">
+        <template #header>
+          <span>Profile</span>
+        </template>
+
         <div class="profile-avatar-row">
           <div class="profile-avatar-preview">
             <img v-if="profileForm.avatar_data" :src="profileForm.avatar_data" alt="avatar" />
             <span v-else>{{ displayName[0] }}</span>
           </div>
           <div class="profile-avatar-actions">
-              <div
-                class="file-uploader"
-                :class="{ dragging: avatarUploaderDragging }"
-                role="button"
-                tabindex="0"
-                @click="openAvatarPicker"
-                @keydown.enter.prevent="openAvatarPicker"
-                @dragover.prevent="avatarUploaderDragging = true"
-                @dragleave.prevent="avatarUploaderDragging = false"
-                @drop.prevent="onAvatarUploaderDrop"
-              >
-                <input
-                  ref="avatarInputRef"
-                  type="file"
-                  accept="image/png,image/jpeg"
-                  class="hidden-file-input"
-                  @change="onAvatarChange"
-                />
-                <span class="file-uploader-icon">⬆</span>
-                <div>
-                  <p class="file-uploader-title">Upload avatar</p>
-                  <p class="file-uploader-subtitle">PNG or JPG, up to 1MB. Drag and drop supported.</p>
-                </div>
+            <el-upload
+              ref="avatarUploadRef"
+              :auto-upload="false"
+              :on-change="onAvatarUploadChange"
+              accept="image/png,image/jpeg"
+              :limit="1"
+              :show-file-list="false"
+              list-type="picture-card"
+            >
+              <div class="upload-trigger">
+                <el-icon><Plus /></el-icon>
+                <span>Upload avatar</span>
               </div>
-            <button class="ghost" @click="removeAvatar">Remove avatar</button>
+            </el-upload>
+            <el-button text @click="removeAvatar">Remove avatar</el-button>
           </div>
         </div>
 
-        <div class="grid">
-          <input v-model="profileForm.name" placeholder="Name" />
-          <input v-model="profileForm.email" placeholder="Email" />
-          <input v-model="profileForm.phone" placeholder="Phone" />
-        </div>
+        <el-form label-position="top">
+          <el-form-item label="Name">
+            <el-input v-model="profileForm.name" placeholder="Name" />
+          </el-form-item>
+          <el-form-item label="Email">
+            <el-input v-model="profileForm.email" placeholder="Email" />
+          </el-form-item>
+          <el-form-item label="Phone">
+            <el-input v-model="profileForm.phone" placeholder="Phone" />
+          </el-form-item>
+        </el-form>
 
         <div class="actions">
-          <button class="primary" :disabled="loading" @click="saveProfile">Save Profile</button>
+          <el-button type="primary" :disabled="loading" @click="saveProfile">Save Profile</el-button>
         </div>
-      </article>
+      </el-card>
 
-      <article class="table-card profile-card password-card">
-        <h3>Change Password</h3>
+      <el-card shadow="never">
+        <template #header>
+          <span>Change Password</span>
+        </template>
+
         <p class="password-card-tip">Use a strong password and keep your account secure.</p>
-        <div class="profile-password-form">
-          <label class="field-label">Current Password <span class="required-mark">*</span></label>
-          <input
-            v-model="passwordForm.current_password"
-            type="password"
-            placeholder="Enter current password"
-            :class="{ 'input-invalid': passwordSubmitAttempted && !passwordForm.current_password }"
-          />
 
-          <label class="field-label">New Password <span class="required-mark">*</span></label>
-          <input
-            v-model="passwordForm.new_password"
-            type="password"
-            placeholder="Enter new password"
-            :class="{ 'input-invalid': passwordSubmitAttempted && !passwordForm.new_password }"
-          />
+        <el-form label-position="top">
+          <el-form-item label="Current Password" required>
+            <el-input
+              v-model="passwordForm.current_password"
+              type="password"
+              show-password
+              placeholder="Enter current password"
+              :class="{ 'is-error': passwordSubmitAttempted && !passwordForm.current_password }"
+            />
+          </el-form-item>
+
+          <el-form-item label="New Password" required>
+            <el-input
+              v-model="passwordForm.new_password"
+              type="password"
+              show-password
+              placeholder="Enter new password"
+              :class="{ 'is-error': passwordSubmitAttempted && !passwordForm.new_password }"
+            />
+          </el-form-item>
+
           <div class="password-strength-wrap">
-            <div class="password-strength-track">
-              <div
-                class="password-strength-fill"
-                :class="`tone-${passwordStrength.tone}`"
-                :style="{ width: `${passwordStrength.percent}%` }"
-              ></div>
-            </div>
-            <span class="password-strength-text" :class="`tone-${passwordStrength.tone}`">
-              Strength: {{ passwordStrength.label }}
-            </span>
+            <el-progress
+              :percentage="passwordStrength.percent"
+              :color="strengthColor"
+              :stroke-width="8"
+              :show-text="false"
+              striped
+            />
+            <span class="password-strength-text">Strength: {{ passwordStrength.label }}</span>
           </div>
 
-          <label class="field-label">Confirm New Password <span class="required-mark">*</span></label>
-          <input
-            v-model="passwordForm.confirm_password"
-            type="password"
-            placeholder="Re-enter new password"
-            :class="{ 'input-invalid': passwordSubmitAttempted && !passwordForm.confirm_password }"
-          />
-        </div>
-        <div class="actions">
-          <button class="primary" @click="changePassword">Update Password</button>
-        </div>
-      </article>
+          <el-form-item label="Confirm New Password" required>
+            <el-input
+              v-model="passwordForm.confirm_password"
+              type="password"
+              show-password
+              placeholder="Re-enter new password"
+              :class="{ 'is-error': passwordSubmitAttempted && !passwordForm.confirm_password }"
+            />
+          </el-form-item>
+        </el-form>
 
-      <article v-if="isAdmin" class="table-card profile-card">
-        <h3>Platform Branding</h3>
+        <div class="actions">
+          <el-button type="primary" @click="changePassword">Update Password</el-button>
+        </div>
+      </el-card>
+
+      <el-card v-if="isAdmin" shadow="never">
+        <template #header>
+          <span>Platform Branding</span>
+        </template>
+
         <p class="password-card-tip">Admin-only: customize platform name and logo shown in login and sidebar.</p>
+
         <div class="profile-avatar-row">
           <div class="profile-avatar-preview">
             <img v-if="platformForm.logo_data" :src="platformForm.logo_data" alt="platform logo" />
             <span v-else>P</span>
           </div>
           <div class="profile-avatar-actions">
-            <div
-              class="file-uploader"
-              :class="{ dragging: platformLogoDragging }"
-              role="button"
-              tabindex="0"
-              @click="openPlatformLogoPicker"
-              @keydown.enter.prevent="openPlatformLogoPicker"
-              @dragover.prevent="platformLogoDragging = true"
-              @dragleave.prevent="platformLogoDragging = false"
-              @drop.prevent="onPlatformLogoDrop"
+            <el-upload
+              ref="platformLogoUploadRef"
+              :auto-upload="false"
+              :on-change="onPlatformLogoUploadChange"
+              accept="image/png,image/jpeg"
+              :limit="1"
+              :show-file-list="false"
+              list-type="picture-card"
             >
-              <input
-                ref="platformLogoInputRef"
-                type="file"
-                accept="image/png,image/jpeg"
-                class="hidden-file-input"
-                @change="onPlatformLogoChange"
-              />
-              <span class="file-uploader-icon">⬆</span>
-              <div>
-                <p class="file-uploader-title">Upload platform logo</p>
-                <p class="file-uploader-subtitle">PNG or JPG, up to 1MB. Drag and drop supported.</p>
+              <div class="upload-trigger">
+                <el-icon><Plus /></el-icon>
+                <span>Upload platform logo</span>
               </div>
-            </div>
-            <button class="ghost" @click="removePlatformLogo">Remove logo</button>
+            </el-upload>
+            <el-button text @click="removePlatformLogo">Remove logo</el-button>
           </div>
         </div>
 
-        <div class="grid">
-          <input v-model="platformForm.platform_name" placeholder="Platform name" />
-        </div>
+        <el-form label-position="top">
+          <el-form-item label="Platform Name">
+            <el-input v-model="platformForm.platform_name" placeholder="Platform name" />
+          </el-form-item>
+        </el-form>
 
         <div class="actions">
-          <button class="primary" @click="savePlatform">Save Branding</button>
+          <el-button type="primary" @click="savePlatform">Save Branding</el-button>
         </div>
-      </article>
+      </el-card>
     </section>
   </div>
 </template>
+
+<style scoped>
+.password-strength-wrap {
+  margin-bottom: 18px;
+}
+
+.password-strength-text {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.password-card-tip {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.upload-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+</style>
