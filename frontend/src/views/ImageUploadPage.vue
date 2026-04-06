@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import type { UploadFile } from 'element-plus'
 
 interface UploadItem {
   id: number
@@ -17,9 +19,18 @@ const previewUrl = computed(() => {
   return URL.createObjectURL(selectedFile.value)
 })
 
-const chooseFile = (event: Event) => {
-  const input = event.target as HTMLInputElement
-  selectedFile.value = input.files?.[0] || null
+// Fix memory leak: revoke previous object URL when it changes
+let previousUrl = ''
+watch(previewUrl, (newUrl) => {
+  if (previousUrl) URL.revokeObjectURL(previousUrl)
+  previousUrl = newUrl
+})
+onUnmounted(() => {
+  if (previousUrl) URL.revokeObjectURL(previousUrl)
+})
+
+const handleChange = (uploadFile: UploadFile) => {
+  selectedFile.value = uploadFile.raw || null
 }
 
 const upload = () => {
@@ -32,6 +43,7 @@ const upload = () => {
   })
   selectedFile.value = null
   note.value = ''
+  ElMessage.success('Image uploaded successfully')
 }
 </script>
 
@@ -45,26 +57,79 @@ const upload = () => {
     </section>
 
     <section class="upload-grid">
-      <article class="upload-card">
-        <h3>Upload</h3>
-        <input type="file" accept="image/*" @change="chooseFile" />
-        <textarea v-model="note" placeholder="Add clinical note (optional)"></textarea>
-        <div v-if="previewUrl" class="preview-wrap">
-          <img :src="previewUrl" alt="preview" />
-        </div>
-        <button class="primary" @click="upload">Upload</button>
-      </article>
+      <el-card>
+        <template #header>
+          <h3>Upload</h3>
+        </template>
+        <el-upload
+          drag
+          :auto-upload="false"
+          accept="image/*"
+          :show-file-list="false"
+          :on-change="handleChange"
+        >
+          <el-icon style="font-size: 40px; color: var(--el-text-color-placeholder)">
+            <i class="el-icon-upload" />
+          </el-icon>
+          <div>Drop image here or <em>click to browse</em></div>
+        </el-upload>
 
-      <article class="upload-card">
-        <h3>Recent Uploads</h3>
-        <ul class="upload-list">
+        <el-input
+          v-model="note"
+          type="textarea"
+          placeholder="Add clinical note (optional)"
+          :rows="3"
+          style="margin-top: 16px"
+        />
+
+        <div v-if="previewUrl" class="preview-wrap">
+          <el-image :src="previewUrl" alt="preview" fit="cover" style="max-height: 200px; width: 100%" />
+        </div>
+
+        <el-button type="primary" style="margin-top: 16px" @click="upload">Upload</el-button>
+      </el-card>
+
+      <el-card>
+        <template #header>
+          <h3>Recent Uploads</h3>
+        </template>
+        <ul v-if="uploads.length" class="upload-list">
           <li v-for="item in uploads" :key="item.id">
             <strong>{{ item.name }}</strong>
-            <span>{{ item.size }} · {{ item.uploadedAt }}</span>
+            <span>{{ item.size }} &middot; {{ item.uploadedAt }}</span>
           </li>
-          <li v-if="uploads.length === 0" class="empty">No uploaded images yet.</li>
         </ul>
-      </article>
+        <el-empty v-else description="No uploaded images yet." />
+      </el-card>
     </section>
   </div>
 </template>
+
+<style scoped>
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.preview-wrap {
+  margin-top: 16px;
+}
+
+.upload-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.upload-list li {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.upload-list li:last-child {
+  border-bottom: none;
+}
+</style>

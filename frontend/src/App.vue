@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
+import { Odometer, User, UserFilled, Calendar, Clock, Document, SwitchButton } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,12 +14,12 @@ const { platformName, loadPlatformBrand } = usePlatformBrand()
 const showShell = computed(() => authStore.isAuthenticated && route.path !== '/login')
 
 const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { path: '/doctors', label: 'Doctors', icon: '👨‍⚕️' },
-  { path: '/patients', label: 'Patients', icon: '🧑‍🤝‍🧑' },
-  { path: '/appointments', label: 'Appointments', icon: '📅' },
-  { path: '/timeslots', label: 'My Schedule', icon: '🕒' },
-  { path: '/records', label: 'Medical Records', icon: '📋' },
+  { path: '/dashboard', label: 'Dashboard', icon: Odometer },
+  { path: '/doctors', label: 'Doctors', icon: User },
+  { path: '/patients', label: 'Patients', icon: UserFilled },
+  { path: '/appointments', label: 'Appointments', icon: Calendar },
+  { path: '/timeslots', label: 'My Schedule', icon: Clock },
+  { path: '/records', label: 'Medical Records', icon: Document },
 ]
 
 const pageTitleMap: Record<string, string> = {
@@ -69,7 +70,7 @@ watch(
 
         <nav class="sidebar-nav">
           <router-link v-for="item in navItems" :key="item.path" :to="item.path" class="nav-link">
-            <span class="nav-emoji">{{ item.icon }}</span>
+            <el-icon class="nav-emoji"><component :is="item.icon" /></el-icon>
             <span class="nav-text">{{ item.label }}</span>
           </router-link>
         </nav>
@@ -88,12 +89,9 @@ watch(
             <strong>{{ authStore.user?.username || 'demo_user' }}</strong>
             <span>{{ authStore.user?.user_type || 'admin' }}</span>
           </div>
-          <button class="btn-secondary footer-logout" title="Logout" aria-label="Logout" @click.stop="handleLogout">
-            <svg class="logout-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M10 17l1.4-1.4-2.6-2.6H20v-2H8.8l2.6-2.6L10 7l-5 5 5 5z" />
-              <path d="M18 19h-6v2h6c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-6v2h6v14z" />
-            </svg>
-          </button>
+          <el-button class="footer-logout" title="Logout" aria-label="Logout" @click.stop="handleLogout">
+            <el-icon><SwitchButton /></el-icon>
+          </el-button>
         </div>
       </aside>
 

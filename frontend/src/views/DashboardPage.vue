@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import apiClient from '@/utils/apiClient'
 
 type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
@@ -23,7 +24,6 @@ interface PaginatedResponse<T> {
 
 const router = useRouter()
 const loading = ref(false)
-const errorMessage = ref('')
 const appointments = ref<DashboardAppointment[]>([])
 
 const today = computed(() => {
@@ -92,6 +92,16 @@ const statusLegend = computed(() => [
   { label: 'Cancelled', value: cancelledCount.value, tone: 'cancelled' },
 ])
 
+const statusTagType = (status: AppointmentStatus) => {
+  const map: Record<AppointmentStatus, '' | 'success' | 'warning' | 'danger' | 'info'> = {
+    pending: 'warning',
+    confirmed: '',
+    completed: 'success',
+    cancelled: 'danger',
+  }
+  return map[status]
+}
+
 const quickActions = computed(() => [
   {
     key: 'doctors',
@@ -121,7 +131,6 @@ const quickActions = computed(() => [
 
 const fetchDashboardData = async () => {
   loading.value = true
-  errorMessage.value = ''
   try {
     const appointmentsResp = await apiClient.get('/api/appointments/', {
       params: { date: today.value, page_size: 50 },
@@ -133,7 +142,7 @@ const fetchDashboardData = async () => {
       ? appointmentData
       : appointmentData.results
   } catch (error: any) {
-    errorMessage.value = error.response?.data?.detail || 'Failed to load dashboard data'
+    ElMessage.error(error.response?.data?.detail || 'Failed to load dashboard data')
   } finally {
     loading.value = false
   }
@@ -153,73 +162,105 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section v-if="errorMessage" class="table-card" style="padding: 10px 12px; color: #c2334a;">
-      {{ errorMessage }}
-    </section>
-
-    <section class="stats-grid">
-      <article v-for="item in stats" :key="item.label" class="stat-card" :class="`tone-${item.tone}`">
-        <span>{{ item.label }}</span>
-        <strong>{{ item.value }}</strong>
-        <small>{{ item.trend }}</small>
-      </article>
-    </section>
-
-    <section class="content-grid">
-      <article class="panel appointments-panel">
-        <header>
-          <h3>Today Schedule</h3>
-          <a href="#" @click.prevent="router.push('/appointments')">View all</a>
-        </header>
-        <ul v-if="todaySchedule.length > 0">
-          <li v-for="item in todaySchedule" :key="item.id" :class="`row-${item.status}`">
-            <div>
-              <strong>{{ item.patient_name }}</strong>
-              <span>{{ item.doctor_name }} · {{ item.appointment_time.slice(0, 5) }}</span>
+    <template v-if="loading">
+      <section class="stats-grid">
+        <el-skeleton v-for="n in 4" :key="n" animated>
+          <template #template>
+            <div class="stat-card">
+              <el-skeleton-item variant="text" style="width: 60%" />
+              <el-skeleton-item variant="h1" style="width: 30%; margin-top: 12px" />
+              <el-skeleton-item variant="text" style="width: 50%; margin-top: 8px" />
             </div>
-            <span class="badge" :class="item.status">{{ item.status }}</span>
-          </li>
-        </ul>
-        <p v-else style="margin: 0; color: #7f849a;">No upcoming appointments.</p>
-      </article>
+          </template>
+        </el-skeleton>
+      </section>
+      <section class="content-grid">
+        <el-skeleton animated :rows="6" />
+        <el-skeleton animated :rows="6" />
+      </section>
+    </template>
 
-      <article class="panel side-panel">
-        <section>
-          <h3>Today Status Distribution</h3>
-          <div class="status-pie-wrap">
-            <div class="status-pie" :style="statusPieStyle"></div>
-            <div class="status-legend">
-              <div v-for="item in statusLegend" :key="item.label" class="status-legend-row">
-                <span class="legend-dot" :class="`tone-${item.tone}`"></span>
-                <span>{{ item.label }}</span>
-                <strong>{{ item.value }}</strong>
+    <div v-else v-loading="loading">
+      <section class="stats-grid">
+        <el-card
+          v-for="item in stats"
+          :key="item.label"
+          class="stat-card"
+          :class="`tone-${item.tone}`"
+          shadow="hover"
+          :body-style="{ padding: '20px' }"
+        >
+          <span>{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+          <small>{{ item.trend }}</small>
+        </el-card>
+      </section>
+
+      <section class="content-grid">
+        <el-card class="panel appointments-panel" shadow="never">
+          <template #header>
+            <div class="panel-header">
+              <h3>Today Schedule</h3>
+              <el-button type="primary" link @click="router.push('/appointments')">View all</el-button>
+            </div>
+          </template>
+          <ul v-if="todaySchedule.length > 0">
+            <li v-for="item in todaySchedule" :key="item.id" :class="`row-${item.status}`">
+              <div>
+                <strong>{{ item.patient_name }}</strong>
+                <span>{{ item.doctor_name }} · {{ item.appointment_time.slice(0, 5) }}</span>
+              </div>
+              <el-tag :type="statusTagType(item.status)" size="small">{{ item.status }}</el-tag>
+            </li>
+          </ul>
+          <el-empty v-else description="No upcoming appointments." :image-size="80" />
+        </el-card>
+
+        <el-card class="panel side-panel" shadow="never">
+          <section>
+            <h3>Today Status Distribution</h3>
+            <div class="status-pie-wrap">
+              <div class="status-pie" :style="statusPieStyle"></div>
+              <div class="status-legend">
+                <div v-for="item in statusLegend" :key="item.label" class="status-legend-row">
+                  <span class="legend-dot" :class="`tone-${item.tone}`"></span>
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section>
-          <h3>Quick Actions</h3>
-          <div class="quick-actions">
-            <button
-              v-for="action in quickActions"
-              :key="action.key"
-              type="button"
-              class="quick-action-card"
-              @click="router.push(action.path)"
-            >
-              <span class="quick-action-icon">{{ action.icon }}</span>
-              <span class="quick-action-body">
-                <strong>{{ action.title }}</strong>
-                <small>{{ action.description }}</small>
-              </span>
-              <span class="quick-action-note">{{ action.note }}</span>
-            </button>
-          </div>
-          <p class="pending-tip">{{ pendingCount }} appointments are waiting for confirmation today.</p>
-          <p v-if="loading" class="pending-tip" style="margin-top: 4px;">Refreshing dashboard data...</p>
-        </section>
-      </article>
-    </section>
+          <section>
+            <h3>Quick Actions</h3>
+            <div class="quick-actions">
+              <button
+                v-for="action in quickActions"
+                :key="action.key"
+                type="button"
+                class="quick-action-card"
+                @click="router.push(action.path)"
+              >
+                <span class="quick-action-icon">{{ action.icon }}</span>
+                <span class="quick-action-body">
+                  <strong>{{ action.title }}</strong>
+                  <small>{{ action.description }}</small>
+                </span>
+                <span class="quick-action-note">{{ action.note }}</span>
+              </button>
+            </div>
+            <p class="pending-tip">{{ pendingCount }} appointments are waiting for confirmation today.</p>
+          </section>
+        </el-card>
+      </section>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style>
