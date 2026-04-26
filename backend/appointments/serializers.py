@@ -6,7 +6,6 @@ from users.models import User
 
 from .models import Appointment, AppointmentAttachment, DoctorScheduleSlot
 
-
 ALLOWED_SLOT_TIMES = {
     time(8, 0),
     time(8, 30),
@@ -95,9 +94,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             is_available=False,
         ).exists()
         if blocked:
-            raise serializers.ValidationError(
-                "selected slot is unavailable by doctor schedule"
-            )
+            raise serializers.ValidationError("selected slot is unavailable by doctor schedule")
 
         return attrs
 
@@ -110,9 +107,7 @@ class AppointmentCompleteSerializer(serializers.Serializer):
     class AttachmentInputSerializer(serializers.Serializer):
         file_name = serializers.CharField(max_length=255)
         image_data = serializers.CharField()
-        image_type = serializers.CharField(
-            max_length=50, required=False, allow_blank=True
-        )
+        image_type = serializers.CharField(max_length=50, required=False, allow_blank=True)
         compressed_size = serializers.IntegerField(required=False, min_value=0)
 
     diagnosis_result = serializers.CharField()
@@ -123,9 +118,7 @@ class AppointmentCompleteSerializer(serializers.Serializer):
     def validate_attachments(self, value):
         for item in value:
             if not item["image_data"].startswith("data:image/"):
-                raise serializers.ValidationError(
-                    "attachment image_data must be image data URL"
-                )
+                raise serializers.ValidationError("attachment image_data must be image data URL")
         return value
 
 
@@ -165,9 +158,7 @@ class ScheduleSlotSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         slot_time = attrs["slot_time"]
         if slot_time not in ALLOWED_SLOT_TIMES:
-            raise serializers.ValidationError(
-                "slot_time must be in allowed 30-minute clinic slots"
-            )
+            raise serializers.ValidationError("slot_time must be in allowed 30-minute clinic slots")
         if attrs["doctor"].role != User.Role.DOCTOR:
             raise serializers.ValidationError("doctor must be a doctor role user")
         return attrs

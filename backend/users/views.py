@@ -1,12 +1,13 @@
+from typing import Any
+
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from typing import Any
 
-from .models import User
+from .models import PlatformSetting, User
 from .serializers import (
     LoginTokenSerializer,
     PasswordChangeSerializer,
@@ -15,7 +16,6 @@ from .serializers import (
     UserManageSerializer,
     UserSerializer,
 )
-from .models import PlatformSetting
 
 
 class LoginView(TokenObtainPairView):
@@ -46,15 +46,11 @@ class ChangePasswordView(GenericAPIView):
 
     @extend_schema(request=PasswordChangeSerializer, responses={200: None})
     def post(self, request):
-        serializer = PasswordChangeSerializer(
-            data=request.data, context={"request": request}
-        )
+        serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         validated_data: Any = serializer.validated_data
         new_password = (
-            validated_data.get("new_password")
-            if isinstance(validated_data, dict)
-            else None
+            validated_data.get("new_password") if isinstance(validated_data, dict) else None
         )
         if not isinstance(new_password, str):
             return Response({"detail": "invalid new password"}, status=400)
@@ -82,9 +78,7 @@ class PlatformSettingView(GenericAPIView):
         setting = self._get_setting()
         return Response(PlatformSettingSerializer(setting).data)
 
-    @extend_schema(
-        request=PlatformSettingSerializer, responses=PlatformSettingSerializer
-    )
+    @extend_schema(request=PlatformSettingSerializer, responses=PlatformSettingSerializer)
     def patch(self, request):
         setting = self._get_setting()
         serializer = PlatformSettingSerializer(setting, data=request.data, partial=True)

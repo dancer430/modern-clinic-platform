@@ -1,0 +1,48 @@
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning:rest_framework.*",
+    "ignore::DeprecationWarning:django.*",
+]
+
+[tool.coverage.run]
+source = ["users", "appointments"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [
+    "**/migrations/**",
+    ".venv",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = [
+    "E501",  # line length is enforced by black
+    "B008",  # function-call-in-default-argument: DRF serializers use this pattern
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["B011"]  # assert False is fine in tests
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+extend-exclude = '''
+/(
+  | migrations
+  | \.venv
+)/
+'''

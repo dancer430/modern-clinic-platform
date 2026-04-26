@@ -1,7 +1,7 @@
+from django.contrib.auth.password_validation import validate_password
+from django.db import connection
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.db import connection
-from django.contrib.auth.password_validation import validate_password
 
 from .models import PlatformSetting, User
 
@@ -36,9 +36,7 @@ class LoginTokenSerializer(TokenObtainPairSerializer):
         identifier = attrs.get(username_key)
         if isinstance(identifier, str) and "@" in identifier:
             matched_user = (
-                User._default_manager.filter(email__iexact=identifier)
-                .order_by("id")
-                .first()
+                User._default_manager.filter(email__iexact=identifier).order_by("id").first()
             )
             if matched_user is not None:
                 attrs = {**attrs, username_key: matched_user.get_username()}
@@ -83,8 +81,7 @@ class UserManageSerializer(serializers.ModelSerializer):
             return ""
         # Fetch all taken suffixes in one query instead of looping with individual queries
         taken = set(
-            users_qs.filter(username__iregex=rf"^{base}\d*$")
-            .values_list("username", flat=True)
+            users_qs.filter(username__iregex=rf"^{base}\d*$").values_list("username", flat=True)
         )
         suffix = 2
         while f"{base}{suffix}".lower() in {u.lower() for u in taken}:
@@ -92,9 +89,7 @@ class UserManageSerializer(serializers.ModelSerializer):
         return f"{base}{suffix}"
 
     def validate(self, attrs):
-        role_value = self.context.get("role_value") or getattr(
-            self.instance, "role", ""
-        )
+        role_value = self.context.get("role_value") or getattr(self.instance, "role", "")
         editing_id = getattr(self.instance, "id", None)
 
         for field in ["username", "name", "email", "phone"]:
@@ -110,12 +105,8 @@ class UserManageSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             current_username = current_username or self.instance.username
             current_name = current_name or self.instance.name
-            current_email = (
-                current_email if current_email is not None else self.instance.email
-            )
-            current_phone = (
-                current_phone if current_phone is not None else self.instance.phone
-            )
+            current_email = current_email if current_email is not None else self.instance.email
+            current_phone = current_phone if current_phone is not None else self.instance.phone
 
         if not current_username:
             raise serializers.ValidationError({"username": "username is required"})
@@ -138,13 +129,9 @@ class UserManageSerializer(serializers.ModelSerializer):
 
         if role_value == User.Role.DOCTOR:
             if not current_email:
-                raise serializers.ValidationError(
-                    {"email": "email is required for doctor"}
-                )
+                raise serializers.ValidationError({"email": "email is required for doctor"})
             if not current_phone:
-                raise serializers.ValidationError(
-                    {"phone": "phone is required for doctor"}
-                )
+                raise serializers.ValidationError({"phone": "phone is required for doctor"})
             if users_qs.filter(phone=current_phone).exists():
                 raise serializers.ValidationError({"phone": "phone already exists"})
 
@@ -223,9 +210,7 @@ class PasswordChangeSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs["new_password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError(
-                "new password and confirm password do not match"
-            )
+            raise serializers.ValidationError("new password and confirm password do not match")
         validate_password(attrs["new_password"], self.context["request"].user)
         return attrs
 
@@ -248,9 +233,7 @@ class PlatformSettingSerializer(serializers.ModelSerializer):
         if isinstance(platform_name, str):
             next_attrs["platform_name"] = platform_name.strip()
         if not next_attrs.get("platform_name"):
-            raise serializers.ValidationError(
-                {"platform_name": "platform name is required"}
-            )
+            raise serializers.ValidationError({"platform_name": "platform name is required"})
 
         logo_data = next_attrs.get("logo_data")
         logo_type = next_attrs.get("logo_type", "")
@@ -258,16 +241,10 @@ class PlatformSettingSerializer(serializers.ModelSerializer):
 
         if logo_data:
             if not logo_data.startswith("data:image/"):
-                raise serializers.ValidationError(
-                    {"logo_data": "logo_data must be image data URL"}
-                )
+                raise serializers.ValidationError({"logo_data": "logo_data must be image data URL"})
             if logo_type not in ["image/png", "image/jpeg", "image/jpg"]:
-                raise serializers.ValidationError(
-                    {"logo_type": "logo_type must be png/jpg/jpeg"}
-                )
+                raise serializers.ValidationError({"logo_type": "logo_type must be png/jpg/jpeg"})
             if logo_size is None or logo_size > 1024:
-                raise serializers.ValidationError(
-                    {"logo_size": "logo size must be <= 1MB"}
-                )
+                raise serializers.ValidationError({"logo_size": "logo size must be <= 1MB"})
 
         return next_attrs

@@ -1,9 +1,9 @@
-from django.db.models import Q
 from django.db import connection
+from django.db.models import Q
 from rest_framework import permissions, status, viewsets
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from users.models import User
@@ -32,7 +32,9 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Appointment._default_manager.select_related("patient", "doctor").prefetch_related("attachments")
+        queryset = Appointment._default_manager.select_related(
+            "patient", "doctor"
+        ).prefetch_related("attachments")
         status_param = self.request.query_params.get("status")
         doctor_param = self.request.query_params.get("doctor")
         patient_param = self.request.query_params.get("patient")
@@ -123,9 +125,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
         if attachments and connection.vendor != "postgresql":
             return Response(
-                {
-                    "detail": "attachments are only supported when database is PostgreSQL"
-                },
+                {"detail": "attachments are only supported when database is PostgreSQL"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -173,9 +173,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             )
 
         user = request.user
-        is_related = (
-            appointment.patient_id == user.id or appointment.doctor_id == user.id
-        )
+        is_related = appointment.patient_id == user.id or appointment.doctor_id == user.id
         if user.role != User.Role.ADMIN and not is_related:
             raise PermissionDenied("only related user or admin can cancel")
 
@@ -216,9 +214,7 @@ class ScheduleSlotViewSet(viewsets.ModelViewSet):
         doctor = serializer.instance.doctor
         target_doctor = serializer.validated_data.get("doctor", doctor)
         if user.role == User.Role.ADMIN or (
-            user.role == User.Role.DOCTOR
-            and doctor.id == user.id
-            and target_doctor.id == user.id
+            user.role == User.Role.DOCTOR and doctor.id == user.id and target_doctor.id == user.id
         ):
             serializer.save()
             return
