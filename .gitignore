@@ -19,6 +19,25 @@ dist/
 *.swp
 *.swo
 
+# Local agent / assistant configuration (per-developer, not shared)
+.claude/
+.opencode/
+
+# Python tooling
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Node tooling
+frontend/coverage/
+
+# Backend runtime artifacts
+backend/runserver.log
+backend/staticfiles/
+
 # OS
 .DS_Store
 Thumbs.db
