@@ -35,7 +35,7 @@ const router = createRouter({
     {
       path: '/appointments',
       name: 'appointments',
-      component: () => import('@/views/AppointmentsPage.vue'),
+      component: () => import('@/features/appointments/pages/AppointmentsPage.vue'),
       meta: { requiresAuth: true },
     },
     {
