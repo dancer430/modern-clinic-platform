@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import apiClient from '@/utils/apiClient'
+import httpClient from '@/shared/http'
 
 type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 
@@ -132,7 +132,7 @@ const quickActions = computed(() => [
 const fetchDashboardData = async () => {
   loading.value = true
   try {
-    const appointmentsResp = await apiClient.get('/api/appointments/', {
+    const appointmentsResp = await httpClient.get('/api/appointments/', {
       params: { date: today.value, page_size: 50 },
     })
     const appointmentData = appointmentsResp.data as

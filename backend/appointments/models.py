@@ -22,9 +22,7 @@ class Appointment(models.Model):
     appointment_date = models.DateField()
     appointment_time = models.TimeField()
     reason = models.TextField(blank=True)
-    status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.PENDING
-    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
 
     confirm_info = models.CharField(max_length=500, blank=True)
     diagnosis_result = models.TextField(blank=True)

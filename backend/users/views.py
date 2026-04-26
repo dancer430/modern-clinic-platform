@@ -1,12 +1,13 @@
+from typing import Any
+
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, inline_serializer
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from typing import Any
 
-from .models import User
+from . import services
+from .models import PlatformSetting, User
 from .serializers import (
     LoginTokenSerializer,
     PasswordChangeSerializer,
@@ -15,7 +16,6 @@ from .serializers import (
     UserManageSerializer,
     UserSerializer,
 )
-from .models import PlatformSetting
 
 
 class LoginView(TokenObtainPairView):
@@ -46,20 +46,15 @@ class ChangePasswordView(GenericAPIView):
 
     @extend_schema(request=PasswordChangeSerializer, responses={200: None})
     def post(self, request):
-        serializer = PasswordChangeSerializer(
-            data=request.data, context={"request": request}
-        )
+        serializer = PasswordChangeSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        validated_data: Any = serializer.validated_data
-        new_password = (
-            validated_data.get("new_password")
-            if isinstance(validated_data, dict)
-            else None
+        validated: Any = serializer.validated_data
+        services.change_password(
+            user=request.user,
+            current_password=validated["current_password"],
+            new_password=validated["new_password"],
+            confirm_password=validated["confirm_password"],
         )
-        if not isinstance(new_password, str):
-            return Response({"detail": "invalid new password"}, status=400)
-        request.user.set_password(new_password)
-        request.user.save(update_fields=["password"])
         return Response({"detail": "password updated"})
 
 
@@ -82,9 +77,7 @@ class PlatformSettingView(GenericAPIView):
         setting = self._get_setting()
         return Response(PlatformSettingSerializer(setting).data)
 
-    @extend_schema(
-        request=PlatformSettingSerializer, responses=PlatformSettingSerializer
-    )
+    @extend_schema(request=PlatformSettingSerializer, responses=PlatformSettingSerializer)
     def patch(self, request):
         setting = self._get_setting()
         serializer = PlatformSettingSerializer(setting, data=request.data, partial=True)
@@ -105,16 +98,21 @@ class LogoutView(GenericAPIView):
         responses={200: None},
     )
     def post(self, request):
-        refresh = None
-        if isinstance(request.data, dict):
-            refresh = request.data.get("refresh")
-        if refresh:
-            try:
-                token = RefreshToken(refresh)
-                token.blacklist()
-            except Exception:
-                pass
+        refresh = request.data.get("refresh") if isinstance(request.data, dict) else None
+        services.logout(refresh)
         return Response({"detail": "logged out"})
+
+
+class CanCreatePatientPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return bool(
+            user.is_superuser
+            or user.is_staff
+            or getattr(user, "role", "") in [User.Role.ADMIN, User.Role.DOCTOR]
+        )
 
 
 class BaseRoleUserViewSet(viewsets.ModelViewSet):
@@ -137,10 +135,19 @@ class BaseRoleUserViewSet(viewsets.ModelViewSet):
         return [permissions.IsAuthenticated()]
 
     def perform_create(self, serializer):
-        serializer.save(role=self.role_value)
+        user = services.create_user_with_role(
+            role=self.role_value,
+            attrs=dict(serializer.validated_data),
+        )
+        serializer.instance = user
 
     def perform_update(self, serializer):
-        serializer.save(role=self.role_value)
+        user = services.update_user_with_role(
+            user=serializer.instance,
+            role=self.role_value,
+            attrs=dict(serializer.validated_data),
+        )
+        serializer.instance = user
 
 
 class DoctorViewSet(BaseRoleUserViewSet):
@@ -164,15 +171,3 @@ class PatientViewSet(BaseRoleUserViewSet):
     @extend_schema(responses=UserSerializer(many=True))
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-
-
-class CanCreatePatientPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        user = request.user
-        if not user or not user.is_authenticated:
-            return False
-        return bool(
-            user.is_superuser
-            or user.is_staff
-            or getattr(user, "role", "") in [User.Role.ADMIN, User.Role.DOCTOR]
-        )

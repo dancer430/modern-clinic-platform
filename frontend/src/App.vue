@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/features/auth'
+import type { Role } from '@/features/auth'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
 import { Odometer, User, UserFilled, Calendar, Clock, Document, SwitchButton } from '@element-plus/icons-vue'
@@ -13,14 +14,30 @@ const { platformName, loadPlatformBrand } = usePlatformBrand()
 
 const showShell = computed(() => authStore.isAuthenticated && route.path !== '/login')
 
-const navItems = [
+interface NavItem {
+  path: string
+  label: string
+  icon: unknown
+  roles?: Array<Role>
+}
+
+const navItems: Array<NavItem> = [
   { path: '/dashboard', label: 'Dashboard', icon: Odometer },
   { path: '/doctors', label: 'Doctors', icon: User },
   { path: '/patients', label: 'Patients', icon: UserFilled },
   { path: '/appointments', label: 'Appointments', icon: Calendar },
-  { path: '/timeslots', label: 'My Schedule', icon: Clock },
-  { path: '/records', label: 'Medical Records', icon: Document },
+  { path: '/timeslots', label: 'My Schedule', icon: Clock, roles: ['doctor', 'admin'] },
+  { path: '/records', label: 'Medical Records', icon: Document, roles: ['doctor', 'admin'] },
 ]
+
+const visibleNavItems = computed(() =>
+  navItems.filter((item) => {
+    if (!item.roles) return true
+    const role = authStore.user?.user_type
+    if (!role) return false
+    return item.roles.includes(role)
+  }),
+)
 
 const pageTitleMap: Record<string, string> = {
   login: 'Sign In',
@@ -69,7 +86,7 @@ watch(
         </router-link>
 
         <nav class="sidebar-nav">
-          <router-link v-for="item in navItems" :key="item.path" :to="item.path" class="nav-link">
+          <router-link v-for="item in visibleNavItems" :key="item.path" :to="item.path" class="nav-link">
             <el-icon class="nav-emoji"><component :is="item.icon" /></el-icon>
             <span class="nav-text">{{ item.label }}</span>
           </router-link>

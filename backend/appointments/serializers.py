@@ -6,7 +6,7 @@ from users.models import User
 
 from .models import Appointment, AppointmentAttachment, DoctorScheduleSlot
 
-
+# 30-minute clinic slots: 08:00-11:30 and 14:00-17:00.
 ALLOWED_SLOT_TIMES = {
     time(8, 0),
     time(8, 30),
@@ -27,6 +27,13 @@ ALLOWED_SLOT_TIMES = {
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
+    """Shape-only serializer.
+
+    Role checks, slot-availability checks, and state transitions live in
+    appointments.services. The only domain rule kept here is the
+    finite set of allowed slot times, a pure shape constraint.
+    """
+
     patient_name = serializers.SerializerMethodField()
     doctor_name = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
@@ -73,33 +80,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def validate(self, attrs):
-        doctor = attrs["doctor"]
-        patient = attrs["patient"]
-        slot_date = attrs["appointment_date"]
-        slot_time = attrs["appointment_time"]
-
-        if doctor.role != User.Role.DOCTOR:
-            raise serializers.ValidationError("doctor must be a doctor role user")
-        if patient.role != User.Role.PATIENT:
-            raise serializers.ValidationError("patient must be a patient role user")
-        if slot_time not in ALLOWED_SLOT_TIMES:
+    def validate_appointment_time(self, value):
+        if value not in ALLOWED_SLOT_TIMES:
             raise serializers.ValidationError(
                 "appointment_time must be in allowed 30-minute clinic slots"
             )
-
-        blocked = DoctorScheduleSlot._default_manager.filter(
-            doctor=doctor,
-            slot_date=slot_date,
-            slot_time=slot_time,
-            is_available=False,
-        ).exists()
-        if blocked:
-            raise serializers.ValidationError(
-                "selected slot is unavailable by doctor schedule"
-            )
-
-        return attrs
+        return value
 
 
 class AppointmentConfirmSerializer(serializers.Serializer):
@@ -110,9 +96,7 @@ class AppointmentCompleteSerializer(serializers.Serializer):
     class AttachmentInputSerializer(serializers.Serializer):
         file_name = serializers.CharField(max_length=255)
         image_data = serializers.CharField()
-        image_type = serializers.CharField(
-            max_length=50, required=False, allow_blank=True
-        )
+        image_type = serializers.CharField(max_length=50, required=False, allow_blank=True)
         compressed_size = serializers.IntegerField(required=False, min_value=0)
 
     diagnosis_result = serializers.CharField()
@@ -123,9 +107,7 @@ class AppointmentCompleteSerializer(serializers.Serializer):
     def validate_attachments(self, value):
         for item in value:
             if not item["image_data"].startswith("data:image/"):
-                raise serializers.ValidationError(
-                    "attachment image_data must be image data URL"
-                )
+                raise serializers.ValidationError("attachment image_data must be image data URL")
         return value
 
 
@@ -162,12 +144,12 @@ class ScheduleSlotSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def validate(self, attrs):
-        slot_time = attrs["slot_time"]
-        if slot_time not in ALLOWED_SLOT_TIMES:
-            raise serializers.ValidationError(
-                "slot_time must be in allowed 30-minute clinic slots"
-            )
-        if attrs["doctor"].role != User.Role.DOCTOR:
+    def validate_slot_time(self, value):
+        if value not in ALLOWED_SLOT_TIMES:
+            raise serializers.ValidationError("slot_time must be in allowed 30-minute clinic slots")
+        return value
+
+    def validate_doctor(self, value):
+        if value.role != User.Role.DOCTOR:
             raise serializers.ValidationError("doctor must be a doctor role user")
-        return attrs
+        return value

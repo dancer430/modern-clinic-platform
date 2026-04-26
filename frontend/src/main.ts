@@ -1,18 +1,17 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import 'element-plus/dist/index.css'
-import router from './router'
-import { useAuthStore } from './stores/auth'
-import './style.css'
+
 import App from './App.vue'
+import { setupAuth } from './features/auth'
+import router from './router'
+import './style.css'
 
 const app = createApp(App)
-const pinia = createPinia()
-app.use(pinia)
+app.use(createPinia())
 app.use(router)
 
-// 从 localStorage 恢复认证状态
-const authStore = useAuthStore()
-authStore.loadFromStorage()
+// Wire shared/http ↔ features/auth and restore session from storage.
+setupAuth()
 
 app.mount('#app')
