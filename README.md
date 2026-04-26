@@ -111,6 +111,7 @@ Current architecture and workflow change chain:
 - `openspec/changes/unify-auth-client-responsibilities/`
 - `openspec/changes/establish-test-and-ci-baseline/`
 - `openspec/changes/introduce-backend-service-layer/`
+- `openspec/changes/migrate-remaining-pages-to-features/`
 
 The active full-stack refactor program is described top-down in
 [`docs/superpowers/specs/2026-04-26-clinic-platform-refactor-design.md`](docs/superpowers/specs/2026-04-26-clinic-platform-refactor-design.md).
