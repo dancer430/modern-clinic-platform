@@ -134,6 +134,33 @@ cd frontend
 npm run build
 ```
 
+### 4.1) Tests
+
+The repository ships an automated test and lint baseline. Run it locally before opening a PR; CI runs the same suites on every push.
+
+Backend (pytest + ruff + black):
+
+```bash
+cd backend
+pip install -r requirements-dev.txt    # one-time, pins pytest, factory_boy, ruff, black
+pytest                                  # ≈ 3s, 33 tests today
+ruff check .
+black --check .
+```
+
+Frontend (vitest + vue-tsc):
+
+```bash
+cd frontend
+npm install
+npm run test           # watch mode
+npm run test:run       # one-shot, used by CI
+npm run typecheck      # vue-tsc -b --noEmit
+npm run build          # vue-tsc + vite build
+```
+
+CI workflow lives at `.github/workflows/ci.yml` and runs three jobs in parallel: `backend-tests`, `migrations-check`, `frontend-tests`. A merge to `main` is blocked when any job fails.
+
 ## 5) Core API Endpoints
 
 ### Auth and Profile
