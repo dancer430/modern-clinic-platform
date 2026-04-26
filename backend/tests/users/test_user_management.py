@@ -55,7 +55,7 @@ class TestPatientViewSet:
         assert response.status_code == 201, response.json()
         assert response.json()["role"] == "patient"
 
-    def test_duplicate_username_is_rejected(self, api_client, admin_user):
+    def test_duplicate_username_returns_suggestion(self, api_client, admin_user):
         UserFactory(username="dup", role="patient")
         api_client.force_authenticate(user=admin_user)
         response = api_client.post(
@@ -65,11 +65,24 @@ class TestPatientViewSet:
         )
         assert response.status_code == 400
         body = response.json()
-        assert "username" in body
-        # NOTE: the serializer also defines a custom suggestion path that
-        # currently never fires because DRF's auto-generated UniqueValidator
-        # preempts it. The introduce-backend-service-layer sub-change will
-        # consolidate this; for now we only lock the public contract.
+        assert body["code"] == "validation_error"
+        assert "username" in body["fields"]
+        message = body["fields"]["username"][0]
+        assert "dup2" in message
+
+    def test_duplicate_username_suggests_next_free_suffix(self, api_client, admin_user):
+        UserFactory(username="dup", role="patient")
+        UserFactory(username="dup2", role="patient")
+        UserFactory(username="dup3", role="patient")
+        api_client.force_authenticate(user=admin_user)
+        response = api_client.post(
+            "/api/auth/patients/",
+            {"username": "dup", "name": "Duplicate"},
+            format="json",
+        )
+        assert response.status_code == 400
+        message = response.json()["fields"]["username"][0]
+        assert "dup4" in message
 
     def test_list_returns_only_patients(self, api_client, admin_user):
         UserFactory(username="pat-only", role="patient")

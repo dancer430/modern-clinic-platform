@@ -1,6 +1,6 @@
-from django.contrib.auth.password_validation import validate_password
 from django.db import connection
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import PlatformSetting, User
@@ -53,7 +53,28 @@ class LoginTokenSerializer(TokenObtainPairSerializer):
         }
 
 
+def _drop_unique_validators(field):
+    """Strip DRF's auto-generated UniqueValidator from a serializer field.
+
+    DRF's ModelSerializer attaches a UniqueValidator to every model field
+    declared with ``unique=True``. We intentionally route uniqueness through
+    ``users.services`` so the suggestion path stays reachable; otherwise the
+    auto-validator would emit a generic localized message before the service
+    has a chance to compute the next-available username.
+    """
+
+    field.validators = [v for v in field.validators if not isinstance(v, UniqueValidator)]
+    return field
+
+
 class UserManageSerializer(serializers.ModelSerializer):
+    """Shape-only serializer.
+
+    Uniqueness, role-based required fields, and password defaulting all
+    live in ``users.services``. The serializer keeps field types and
+    write-only-password handling.
+    """
+
     role = serializers.CharField(read_only=True)
     user_type = serializers.CharField(source="role", read_only=True)
     password = serializers.CharField(required=False, write_only=True, min_length=6)
@@ -75,83 +96,20 @@ class UserManageSerializer(serializers.ModelSerializer):
             "password",
         ]
 
-    def _suggest_username(self, username: str, users_qs):
-        base = username.strip()
-        if not base:
-            return ""
-        # Fetch all taken suffixes in one query instead of looping with individual queries
-        taken = set(
-            users_qs.filter(username__iregex=rf"^{base}\d*$").values_list("username", flat=True)
-        )
-        suffix = 2
-        while f"{base}{suffix}".lower() in {u.lower() for u in taken}:
-            suffix += 1
-        return f"{base}{suffix}"
+    def build_standard_field(self, field_name, model_field):
+        field_class, field_kwargs = super().build_standard_field(field_name, model_field)
+        # We disable validators by stripping them after instantiation in
+        # ``build_field``; UniqueValidator is added there.
+        return field_class, field_kwargs
 
-    def validate(self, attrs):
-        role_value = self.context.get("role_value") or getattr(self.instance, "role", "")
-        editing_id = getattr(self.instance, "id", None)
-
-        for field in ["username", "name", "email", "phone"]:
-            value = attrs.get(field)
-            if isinstance(value, str):
-                attrs[field] = value.strip()
-
-        current_username = attrs.get("username")
-        current_name = attrs.get("name")
-        current_email = attrs.get("email")
-        current_phone = attrs.get("phone")
-
-        if self.instance is not None:
-            current_username = current_username or self.instance.username
-            current_name = current_name or self.instance.name
-            current_email = current_email if current_email is not None else self.instance.email
-            current_phone = current_phone if current_phone is not None else self.instance.phone
-
-        if not current_username:
-            raise serializers.ValidationError({"username": "username is required"})
-        if not current_name:
-            raise serializers.ValidationError({"name": "name is required"})
-
-        users_qs = User._default_manager.all()
-        if editing_id is not None:
-            users_qs = users_qs.exclude(id=editing_id)
-
-        if users_qs.filter(username__iexact=current_username).exists():
-            suggestion = self._suggest_username(current_username, users_qs)
-            raise serializers.ValidationError(
-                {"username": f"username already exists, please try '{suggestion}'"}
-            )
-
-        if current_email:
-            if users_qs.filter(email__iexact=current_email).exists():
-                raise serializers.ValidationError({"email": "email already exists"})
-
-        if role_value == User.Role.DOCTOR:
-            if not current_email:
-                raise serializers.ValidationError({"email": "email is required for doctor"})
-            if not current_phone:
-                raise serializers.ValidationError({"phone": "phone is required for doctor"})
-            if users_qs.filter(phone=current_phone).exists():
-                raise serializers.ValidationError({"phone": "phone already exists"})
-
-        return attrs
-
-    def create(self, validated_data):
-        password = validated_data.pop("password", "123456")
-        user = User(**validated_data)
-        user.set_password(password)
-        user.save()
-        return user
-
-    def update(self, instance, validated_data):
-        password = validated_data.pop("password", None)
-        for field, value in validated_data.items():
-            setattr(instance, field, value)
-        if password:
-            instance.set_password(password)
-        instance.save()
-        return instance
+    def build_field(self, field_name, info, model_class, nested_depth):
+        field_class, field_kwargs = super().build_field(field_name, info, model_class, nested_depth)
+        if field_name == "username":
+            # Push the UniqueValidator into the service layer (see services
+            # docstring). DRF still keeps the trim/strip behavior of CharField.
+            existing = field_kwargs.get("validators", [])
+            field_kwargs["validators"] = [v for v in existing if not isinstance(v, UniqueValidator)]
+        return field_class, field_kwargs
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
@@ -201,18 +159,6 @@ class PasswordChangeSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
-
-    def validate_current_password(self, value):
-        user = self.context["request"].user
-        if not user.check_password(value):
-            raise serializers.ValidationError("current password is incorrect")
-        return value
-
-    def validate(self, attrs):
-        if attrs["new_password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError("new password and confirm password do not match")
-        validate_password(attrs["new_password"], self.context["request"].user)
-        return attrs
 
 
 class PlatformSettingSerializer(serializers.ModelSerializer):
