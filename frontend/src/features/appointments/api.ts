@@ -1,4 +1,4 @@
-import apiClient from '@/utils/apiClient'
+import httpClient from '@/shared/http'
 
 import type {
   AppointmentItem,
@@ -10,7 +10,7 @@ import type {
 } from './types'
 
 export const fetchAppointmentsRequest = async (params: AppointmentQueryParams) => {
-  const response = await apiClient.get<PaginatedResponse<AppointmentItem> | AppointmentItem[]>('/api/appointments/', {
+  const response = await httpClient.get<PaginatedResponse<AppointmentItem> | AppointmentItem[]>('/api/appointments/', {
     params,
   })
 
@@ -18,17 +18,17 @@ export const fetchAppointmentsRequest = async (params: AppointmentQueryParams) =
 }
 
 export const fetchDoctorsRequest = async () => {
-  const response = await apiClient.get<UserOption[]>('/api/auth/doctors/')
+  const response = await httpClient.get<UserOption[]>('/api/auth/doctors/')
   return response.data
 }
 
 export const fetchPatientsRequest = async () => {
-  const response = await apiClient.get<UserOption[]>('/api/auth/patients/')
+  const response = await httpClient.get<UserOption[]>('/api/auth/patients/')
   return response.data
 }
 
 export const fetchScheduleSlotsRequest = async () => {
-  const response = await apiClient.get<ScheduleSlot[]>('/api/schedule-slots/')
+  const response = await httpClient.get<ScheduleSlot[]>('/api/schedule-slots/')
   return response.data
 }
 
@@ -39,11 +39,11 @@ export const createAppointmentRequest = async (payload: {
   appointment_time: string
   reason: string
 }) => {
-  await apiClient.post('/api/appointments/', payload)
+  await httpClient.post('/api/appointments/', payload)
 }
 
 export const confirmAppointmentRequest = async (appointmentId: number, confirmInfo: string) => {
-  await apiClient.put(`/api/appointments/${appointmentId}/confirm/`, {
+  await httpClient.put(`/api/appointments/${appointmentId}/confirm/`, {
     confirm_info: confirmInfo,
   })
 }
@@ -52,7 +52,7 @@ export const completeAppointmentRequest = async (
   appointmentId: number,
   payload: Pick<CompleteAppointmentForm, 'diagnosisResult' | 'treatmentPlan' | 'medicalAdvice' | 'attachments'>
 ) => {
-  await apiClient.put(`/api/appointments/${appointmentId}/complete/`, {
+  await httpClient.put(`/api/appointments/${appointmentId}/complete/`, {
     diagnosis_result: payload.diagnosisResult.trim(),
     treatment_plan: payload.treatmentPlan.trim(),
     medical_advice: payload.medicalAdvice.trim(),
@@ -61,5 +61,5 @@ export const completeAppointmentRequest = async (
 }
 
 export const cancelAppointmentRequest = async (appointmentId: number) => {
-  await apiClient.put(`/api/appointments/${appointmentId}/cancel/`, {})
+  await httpClient.put(`/api/appointments/${appointmentId}/cancel/`, {})
 }

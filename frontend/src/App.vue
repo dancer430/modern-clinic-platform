@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/features/auth'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
 import { Odometer, User, UserFilled, Calendar, Clock, Document, SwitchButton } from '@element-plus/icons-vue'

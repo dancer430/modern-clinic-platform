@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import apiClient from '@/utils/apiClient'
+import httpClient from '@/shared/http'
 
 interface PlatformSetting {
   platform_name: string
@@ -14,7 +14,7 @@ export const usePlatformBrand = () => {
   const loadPlatformBrand = async (force = false) => {
     if (loaded.value && !force) return
     try {
-      const response = await apiClient.get('/api/auth/platform/')
+      const response = await httpClient.get('/api/auth/platform/')
       const data = response.data as PlatformSetting
       platformName.value = data.platform_name || 'MediNexus'
       logoData.value = data.logo_data || ''

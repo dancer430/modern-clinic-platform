@@ -2,7 +2,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/features/auth'
 import { compressImage, validateImageFile } from '@/utils/imageUtils'
 
 import {

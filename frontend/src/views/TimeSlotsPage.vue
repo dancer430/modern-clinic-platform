@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import apiClient from '@/utils/apiClient'
-import { useAuthStore } from '@/stores/auth'
+import httpClient from '@/shared/http'
+import { useAuthStore } from '@/features/auth'
 
 const SLOT_TIMES = [
   '08:00',
@@ -238,22 +238,22 @@ const canEditSchedule = computed(() => authStore.isAdmin || authStore.isDoctor)
 const selectedSlotTimes = ref<string[]>([])
 
 const fetchDoctors = async () => {
-  const response = await apiClient.get('/api/auth/doctors/')
+  const response = await httpClient.get('/api/auth/doctors/')
   doctors.value = response.data
 }
 
 const fetchPatients = async () => {
-  const response = await apiClient.get('/api/auth/patients/')
+  const response = await httpClient.get('/api/auth/patients/')
   patients.value = response.data
 }
 
 const fetchSlots = async () => {
-  const response = await apiClient.get('/api/schedule-slots/')
+  const response = await httpClient.get('/api/schedule-slots/')
   scheduleSlots.value = response.data
 }
 
 const fetchAppointments = async () => {
-  const response = await apiClient.get('/api/appointments/')
+  const response = await httpClient.get('/api/appointments/')
   const data = response.data as PaginatedResponse<AppointmentItem> | AppointmentItem[]
   appointments.value = Array.isArray(data) ? data : data.results
 }
@@ -328,7 +328,7 @@ const applySelectedSlots = async (mode: 'available' | 'unavailable') => {
         if (row.slotId) {
           if (!row.blocked) {
             requests.push(
-              apiClient.patch(`/api/schedule-slots/${row.slotId}/`, {
+              httpClient.patch(`/api/schedule-slots/${row.slotId}/`, {
                 is_available: false,
               })
             )
@@ -337,7 +337,7 @@ const applySelectedSlots = async (mode: 'available' | 'unavailable') => {
         }
 
         requests.push(
-          apiClient.post('/api/schedule-slots/', {
+          httpClient.post('/api/schedule-slots/', {
             doctor: selectedDoctorId.value,
             slot_date: selectedDate.value,
             slot_time: toApiTime(time),
@@ -349,7 +349,7 @@ const applySelectedSlots = async (mode: 'available' | 'unavailable') => {
 
       if (row.slotId && row.blocked) {
         requests.push(
-          apiClient.patch(`/api/schedule-slots/${row.slotId}/`, {
+          httpClient.patch(`/api/schedule-slots/${row.slotId}/`, {
             is_available: true,
           })
         )

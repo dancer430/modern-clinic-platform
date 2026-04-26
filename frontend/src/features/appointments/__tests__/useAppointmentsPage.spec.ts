@@ -4,8 +4,12 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory, type Router } from 'vue-router'
 
-vi.mock('@/utils/apiClient', () => ({
+vi.mock('@/shared/http', () => ({
   default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+  httpClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+  registerHttpAuthHandlers: vi.fn(),
+  clearHttpAuthHandlers: vi.fn(),
+  getHttpAuthHandlers: vi.fn(),
 }))
 
 vi.mock('@/utils/imageUtils', () => ({
@@ -30,7 +34,7 @@ import {
   fetchPatientsRequest,
   fetchScheduleSlotsRequest,
 } from '../api'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/features/auth'
 import { useAppointmentsPage } from '../composables/useAppointmentsPage'
 import type { AppointmentItem, ScheduleSlot, UserOption } from '../types'
 

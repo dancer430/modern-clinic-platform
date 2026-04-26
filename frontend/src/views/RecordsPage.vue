@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import apiClient from '@/utils/apiClient'
+import httpClient from '@/shared/http'
 
 interface RecordViewItem {
   id: number
@@ -95,7 +95,7 @@ const fetchCompletedRecords = async () => {
       params.date_to = dateTo.value
     }
 
-    const response = await apiClient.get('/api/appointments/', {
+    const response = await httpClient.get('/api/appointments/', {
       params,
     })
     const data = response.data as PaginatedResponse<RecordViewItem> | RecordViewItem[]
@@ -114,12 +114,12 @@ const fetchCompletedRecords = async () => {
 }
 
 const fetchDoctors = async () => {
-  const response = await apiClient.get('/api/auth/doctors/')
+  const response = await httpClient.get('/api/auth/doctors/')
   doctors.value = response.data
 }
 
 const fetchPatients = async () => {
-  const response = await apiClient.get('/api/auth/patients/')
+  const response = await httpClient.get('/api/auth/patients/')
   patients.value = response.data
 }
 

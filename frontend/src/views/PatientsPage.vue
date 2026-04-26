@@ -2,8 +2,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import apiClient from '@/utils/apiClient'
-import { useAuthStore } from '@/stores/auth'
+import httpClient from '@/shared/http'
+import { useAuthStore } from '@/features/auth'
 
 interface PatientUser {
   id: number
@@ -61,7 +61,7 @@ const displayName = (patient: PatientUser) => {
 }
 
 const fetchPatients = async () => {
-  const response = await apiClient.get('/api/auth/patients/')
+  const response = await httpClient.get('/api/auth/patients/')
   patients.value = response.data
 }
 
@@ -141,9 +141,9 @@ const savePatient = async () => {
 
   try {
     if (editingId.value) {
-      await apiClient.patch(`/api/auth/patients/${editingId.value}/`, payload)
+      await httpClient.patch(`/api/auth/patients/${editingId.value}/`, payload)
     } else {
-      await apiClient.post('/api/auth/patients/', payload)
+      await httpClient.post('/api/auth/patients/', payload)
     }
     showDialog.value = false
     ElMessage.success(editingId.value ? 'Patient updated' : 'Patient created')
@@ -168,7 +168,7 @@ const removePatient = async () => {
   if (!canManage.value) return
   if (!deleteTarget.value) return
   try {
-    await apiClient.delete(`/api/auth/patients/${deleteTarget.value.id}/`)
+    await httpClient.delete(`/api/auth/patients/${deleteTarget.value.id}/`)
     showDeleteDialog.value = false
     deleteTarget.value = null
     ElMessage.success('Patient deleted')

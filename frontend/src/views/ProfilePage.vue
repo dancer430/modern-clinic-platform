@@ -3,8 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import apiClient from '@/utils/axios'
-import { useAuthStore } from '@/stores/auth'
+import httpClient from '@/shared/http'
+import { useAuthStore } from '@/features/auth'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
 
 const authStore = useAuthStore()
@@ -78,7 +78,7 @@ const isAdmin = computed(() => authStore.isAdmin)
 const loadProfile = async () => {
   loading.value = true
   try {
-    const response = await apiClient.get('/me/')
+    const response = await httpClient.get('/api/auth/me/')
     const user = response.data
     authStore.setUser(user)
     profileForm.value = {
@@ -98,7 +98,7 @@ const loadProfile = async () => {
 
 const loadPlatform = async () => {
   try {
-    const response = await apiClient.get('/platform/')
+    const response = await httpClient.get('/api/auth/platform/')
     const data = response.data
     platformForm.value = {
       platform_name: data.platform_name || '',
@@ -195,7 +195,7 @@ const removePlatformLogo = () => {
 const savePlatform = async () => {
   if (!isAdmin.value) return
   try {
-    await apiClient.patch('/platform/', platformForm.value)
+    await httpClient.patch('/api/auth/platform/', platformForm.value)
     await loadPlatformBrand(true)
     ElMessage.success('Platform branding updated successfully')
   } catch (error: any) {
@@ -205,7 +205,7 @@ const savePlatform = async () => {
 
 const saveProfile = async () => {
   try {
-    const response = await apiClient.patch('/me/', profileForm.value)
+    const response = await httpClient.patch('/api/auth/me/', profileForm.value)
     authStore.setUser(response.data)
     ElMessage.success('Profile updated successfully')
   } catch (error: any) {
@@ -222,7 +222,7 @@ const changePassword = async () => {
   }
 
   try {
-    await apiClient.post('/change-password/', passwordForm.value)
+    await httpClient.post('/api/auth/change-password/', passwordForm.value)
     passwordForm.value = {
       current_password: '',
       new_password: '',
