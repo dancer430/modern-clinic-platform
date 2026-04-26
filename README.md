@@ -87,3 +87,25 @@ For this repository, use the following Git workflow for every change:
 6. Switch back to local `main` and pull latest remote updates
 
 This is the default operating convention for ongoing development.
+
+## Change Governance
+
+This repository now uses OpenSpec as the default entry point for all non-trivial changes.
+
+- Micro-changes such as typo fixes, comment edits, and style-only adjustments may skip OpenSpec.
+- Any non-trivial change should begin under `openspec/changes/<change-name>/` with:
+  - `proposal.md`
+  - `design.md`
+  - `tasks.md`
+
+Start with:
+
+- [Change Governance Guide](docs/change-governance.md)
+- [Change Roadmap](docs/change-roadmap.md)
+
+Current architecture and workflow change chain:
+
+- `openspec/changes/adopt-openspec-change-governance/`
+- `openspec/changes/standardize-frontend-feature-boundaries/`
+- `openspec/changes/modularize-appointment-page-flow/`
+- `openspec/changes/unify-auth-client-responsibilities/`
