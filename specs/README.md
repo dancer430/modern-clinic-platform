@@ -14,4 +14,4 @@ Use:
 - `tasks.md` for execution planning
 
 For the repository-level workflow, see:
-- `docs/change-governance.md`
+- `docs/internal/change-governance.md`

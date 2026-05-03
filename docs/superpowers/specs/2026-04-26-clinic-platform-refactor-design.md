@@ -6,7 +6,7 @@ Date: 2026-04-26
 Owner: ruiqiu (qiurui)
 Top-level program name: `clinic-platform-refactor`
 
-This spec is the umbrella for a multi-part refactor of the medical booking platform. It does not replace the OpenSpec change governance defined in `docs/change-governance.md`; instead it decomposes the user's "from frontend to backend complete optimization refactor" request into a sequence of OpenSpec changes that each follow the existing governance.
+This spec is the umbrella for a multi-part refactor of the medical booking platform. It does not replace the OpenSpec change governance defined in `docs/internal/change-governance.md`; instead it decomposes the user's "from frontend to backend complete optimization refactor" request into a sequence of OpenSpec changes that each follow the existing governance.
 
 The terminology used throughout: *master spec* = this document; *sub-change* = an OpenSpec change under `openspec/changes/<name>/`. The implementation plan for each sub-change is its `tasks.md`.
 

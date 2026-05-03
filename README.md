@@ -1,118 +1,123 @@
 # Medical Booking Platform
 
-Medical Booking Platform is a full-stack healthcare scheduling system built with **Django + Vue 3**.
-It supports three roles (**Admin**, **Doctor**, **Patient**) and covers core workflows including appointments, scheduling, medical records, and profile management.
+A full-stack healthcare scheduling system built with **Django + Vue 3**.
+Three roles (**Admin**, **Doctor**, **Patient**) cover the full appointment
+lifecycle: book → confirm → complete → cancel, plus doctor schedule
+management, medical records, and per-user profile/avatar/password
+self-service.
 
-## Features
+## Quick Start
 
-- Multi-role authentication and authorization (Admin / Doctor / Patient)
-- End-to-end appointment lifecycle:
-  - Create
-  - Confirm
-  - Complete
-  - Cancel
-- Doctor schedule management with slot-level availability control
-- Medical records view based on completed appointments
-- Personal center:
-  - Contact/profile update
-  - Avatar upload
-  - Secure password change
-- Server-side pagination for appointment and medical record lists
+Prerequisites: `git`, `docker`, `docker compose` v2 (Compose v1 is not
+supported). Podman is auto-detected as a fallback.
+
+```bash
+cp .env.example .env
+# edit .env: set DJANGO_SECRET_KEY, POSTGRES_PASSWORD,
+# DJANGO_SUPERUSER_PASSWORD before first boot
+sh ./init-stack.sh
+```
+
+The init script auto-detects Podman or Docker, installs Compose v2 if
+missing, and brings up all three services.
+
+Force a runtime explicitly:
+
+```bash
+sh ./init-stack.sh --runtime=podman   # or --runtime=docker
+```
+
+Stale containers / networks blocking startup? Run cleanup, then re-init:
+
+```bash
+sh ./cleanup-stack.sh                 # containers + network only
+sh ./cleanup-stack.sh --purge-data    # also wipes Postgres volume (irreversible)
+```
+
+### Access URLs
+
+- Frontend: http://127.0.0.1:5173
+- Backend API: http://127.0.0.1:8000/api/
+- Swagger UI: http://127.0.0.1:8000/api/docs/swagger/
+
+### Default Login
+
+The backend bootstrap script creates a Django superuser on first boot from
+these `.env` variables (idempotent — safe to leave set):
+
+- `DJANGO_SUPERUSER_USERNAME` (default `admin`)
+- `DJANGO_SUPERUSER_EMAIL`
+- `DJANGO_SUPERUSER_PASSWORD`
+
+Log in at the frontend with that admin account, then create doctor and
+patient accounts from the **Users** page in the admin UI to walk through
+the full workflow.
+
+If something goes wrong on first boot, jump to
+[`docs/setup.md` → Troubleshooting](docs/setup.md#7-troubleshooting).
 
 ## Tech Stack
 
 ### Backend
-
 - Python 3.12+
-- Django 4.2
-- Django REST Framework
+- Django 4.2 + Django REST Framework
 - Simple JWT (refresh + blacklist)
 - drf-spectacular (OpenAPI / Swagger)
-- Database strategy:
-  - Development: SQLite
-  - Production: PostgreSQL
+- Database: SQLite for local dev, PostgreSQL in Docker / production
 
 ### Frontend
-
 - Vue 3 + TypeScript
 - Vite
 - Pinia
 - Vue Router
 - Axios
+- Element Plus (with auto-import)
 
-## Project Structure
+## Project Layout
 
 ```text
-booking_demo/
-├── backend/          # Django API
-├── frontend/         # Vue admin console
-├── docs/             # Project documentation
-│   └── setup.md      # Setup and deployment guide
-└── docker-compose.yml
+modern-clinic-platform/
+├── backend/                  # Django API — see backend/README.md
+├── frontend/                 # Vue admin console — see frontend/README.md
+├── docs/
+│   ├── setup.md              # Full setup, validation, and troubleshooting
+│   ├── internal/             # Change governance, roadmap, product overview
+│   └── superpowers/specs/    # Active refactor program specs
+├── openspec/changes/         # OpenSpec change proposals (per-feature)
+├── docker-compose.yml        # Default compose stack (db + backend + frontend)
+├── docker-compose.2c4g.yml   # Tuned override for 2c4g/50G hosts
+├── init-stack.sh             # One-command bring-up (Podman → Docker)
+├── cleanup-stack.sh          # Stop containers, optionally purge DB
+└── .env.example              # Copy to .env, then edit secrets
 ```
 
-## Quick Start
+## Sub-module Docs
 
-One-command init (prefer Podman, fallback Docker, auto-install if missing):
+- [`backend/README.md`](backend/README.md) — module map, local venv flow,
+  pytest/ruff/black, migrations, bootstrap script, OpenAPI regen.
+- [`frontend/README.md`](frontend/README.md) — directory map, vitest /
+  vue-tsc / build commands, feature-boundary conventions, auto-imports,
+  debugging tips.
 
-```bash
-sh ./init-stack.sh
-```
+## Dev Workflow Convention
 
-Force Podman runtime:
+For every change in this repository:
 
-```bash
-sh ./init-stack.sh --runtime=podman
-```
+1. Create a `feature/*` branch from the latest `main`.
+2. Implement and verify locally (tests + lint + manual smoke).
+3. Commit on the feature branch.
+4. Push and open a Pull Request.
+5. Merge after CI and review pass.
+6. Switch back to local `main` and pull the latest remote.
 
-Cleanup stale containers/networks before re-deploy:
+CI lives at `.github/workflows/ci.yml` and gates merges on
+`backend-tests`, `migrations-check`, and `frontend-tests`.
 
-```bash
-sh ./cleanup-stack.sh
-```
+## Further Reading
 
-For full startup and deployment details, see:
-
-- [Setup Guide](docs/setup.md)
-
-## Development Workflow Convention
-
-For this repository, use the following Git workflow for every change:
-
-1. Create a new `feature/*` branch from the latest `main`
-2. Implement and verify changes locally
-3. Commit on the feature branch
-4. Push and open a Pull Request
-5. Merge the PR after checks/review pass
-6. Switch back to local `main` and pull latest remote updates
-
-This is the default operating convention for ongoing development.
-
-## Change Governance
-
-This repository now uses OpenSpec as the default entry point for all non-trivial changes.
-
-- Micro-changes such as typo fixes, comment edits, and style-only adjustments may skip OpenSpec.
-- Any non-trivial change should begin under `openspec/changes/<change-name>/` with:
-  - `proposal.md`
-  - `design.md`
-  - `tasks.md`
-
-Start with:
-
-- [Change Governance Guide](docs/change-governance.md)
-- [Change Roadmap](docs/change-roadmap.md)
-
-Current architecture and workflow change chain:
-
-- `openspec/changes/adopt-openspec-change-governance/`
-- `openspec/changes/standardize-frontend-feature-boundaries/`
-- `openspec/changes/modularize-appointment-page-flow/`
-- `openspec/changes/unify-auth-client-responsibilities/`
-- `openspec/changes/establish-test-and-ci-baseline/`
-- `openspec/changes/introduce-backend-service-layer/`
-- `openspec/changes/migrate-remaining-pages-to-features/`
-- `openspec/changes/harden-settings-and-attachments/`
-
-The active full-stack refactor program is described top-down in
-[`docs/superpowers/specs/2026-04-26-clinic-platform-refactor-design.md`](docs/superpowers/specs/2026-04-26-clinic-platform-refactor-design.md).
+- [`docs/setup.md`](docs/setup.md) — full setup, env vars, validation,
+  Troubleshooting.
+- [`docs/internal/`](docs/internal/) — change governance, roadmap,
+  product overview. Read before proposing a non-trivial change.
+- [`docs/superpowers/specs/2026-04-26-clinic-platform-refactor-design.md`](docs/superpowers/specs/2026-04-26-clinic-platform-refactor-design.md)
+  — top-level design for the active full-stack refactor program.
