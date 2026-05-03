@@ -206,3 +206,149 @@ List supports filters + pagination:
 - Completion attachments:
   - UI supports upload and compression
   - backend persists only when DB is PostgreSQL
+
+## 7) Troubleshooting
+
+The 10 most common first-boot issues, in roughly the order new hires hit
+them.
+
+### 7.1 Port 8000 or 5173 already in use
+
+Symptom: `init-stack.sh` fails with `bind: address already in use`, or
+the frontend / API URL never responds.
+
+```bash
+lsof -i :8000   # find the process holding the port
+lsof -i :5173
+# either stop the conflicting process, or change the host-side port
+# in docker-compose.yml (the "8000:8000" / "5173:80" mapping)
+```
+
+### 7.2 `docker-compose` v1 fails with `KeyError: 'ContainerConfig'`
+
+Compose v1 is unsupported. Confirm you have v2:
+
+```bash
+docker compose version   # must print "Docker Compose version v2.x.x"
+```
+
+If only `docker-compose` (v1) is installed, install Docker Desktop or
+the `docker-compose-plugin` package and use `docker compose` (no
+hyphen).
+
+### 7.3 Container name conflict
+
+Symptom: `Conflict. The container name "/booking-db"` (or
+`booking-backend` / `booking-frontend`) `is already in use`.
+
+```bash
+sh ./cleanup-stack.sh
+sh ./init-stack.sh
+```
+
+### 7.4 Admin login fails after first boot
+
+The bootstrap script will re-sync the superuser's email, role flags,
+and password from `.env` on every container start. So the usual fix is
+to set the right values in `.env` and restart the backend container:
+
+```bash
+docker compose restart backend
+docker compose logs -f backend   # watch for "[bootstrap] superuser already exists"
+```
+
+If you'd rather change the password directly:
+
+```bash
+docker compose exec backend python manage.py changepassword <username>
+```
+
+### 7.5 Frontend 5173 blank or 502 from nginx
+
+```bash
+docker compose ps                 # confirm "frontend" is "Up"
+docker compose logs -f frontend   # nginx error logs surface here
+docker compose up -d --build frontend
+```
+
+A blank page with the API still working usually means the Vue build
+failed silently in a previous run; force a clean build with
+`--no-cache` (see 7.8).
+
+### 7.6 Reset the database
+
+```bash
+sh ./cleanup-stack.sh --purge-data   # irreversible: drops the postgres volume
+sh ./init-stack.sh
+```
+
+### 7.7 Migration failure on bootstrap
+
+```bash
+docker compose logs -f backend       # find the failing migration
+# fix the model or migration in your local checkout, then:
+docker compose exec backend python manage.py migrate
+```
+
+If the failure is in a migration that already partially ran, prefer
+`--fake` or rolling back to the last known-good migration over
+hand-editing `django_migrations`.
+
+### 7.8 Frontend `npm run build` fails inside the image
+
+```bash
+docker compose build --no-cache frontend
+```
+
+If the host-side cache is the suspect (rare, only when you've also
+been doing local `npm install`), wipe it locally:
+
+```bash
+rm -rf frontend/node_modules frontend/package-lock.json
+cd frontend && npm install
+```
+
+### 7.9 Switching between Podman and Docker
+
+`init-stack.sh` auto-detects: Podman first, then Docker, with
+auto-install on Linux. Force a runtime when both are present:
+
+```bash
+sh ./init-stack.sh --runtime=podman
+sh ./init-stack.sh --runtime=docker
+```
+
+`cleanup-stack.sh` follows the same detection logic — no flag needed.
+
+### 7.10 Internal Alauda mirror unreachable (off-network)
+
+The Dockerfiles pin `docker-mirrors.alauda.cn/library/...` so that
+in-network builds skip Docker Hub rate limits. If you are off-network
+(e.g. WFH on personal Wi-Fi) the build will hang or fail with a DNS or
+TLS error.
+
+Local-only workaround — replace three image references with their
+Docker Hub equivalents, then rebuild. **Do not commit this change**;
+it is for your local environment only.
+
+```bash
+# in backend/Dockerfile
+#   FROM docker-mirrors.alauda.cn/library/python:3.12-slim
+# →
+#   FROM docker.io/library/python:3.12-slim
+
+# in frontend/Dockerfile  (two lines)
+#   FROM docker-mirrors.alauda.cn/library/node:20-alpine AS build
+#   FROM docker-mirrors.alauda.cn/library/nginx:1.27-alpine
+# →
+#   FROM docker.io/library/node:20-alpine AS build
+#   FROM docker.io/library/nginx:1.27-alpine
+
+# in docker-compose.yml  (db service)
+#   image: docker-mirrors.alauda.cn/library/postgres:16-alpine
+# →
+#   image: docker.io/library/postgres:16-alpine
+
+docker compose build --no-cache
+sh ./init-stack.sh
+```

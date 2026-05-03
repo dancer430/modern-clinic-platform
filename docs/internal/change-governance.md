@@ -98,4 +98,4 @@ The current repository change chain is:
 Read them in order if you want to understand how governance, frontend boundaries, and the first frontend pilot changes fit together.
 
 For the recommended reading and future implementation order, see:
-- `docs/change-roadmap.md`
+- `change-roadmap.md`
