@@ -497,29 +497,30 @@ onMounted(async () => {
           </header>
 
           <div class="slot-card-toolbar" v-if="canEditSchedule">
-            <el-button
-              type="danger"
-              size="small"
+            <button
+              type="button"
+              class="slot-action-btn action-unavailable"
               :disabled="selectedSlotTimes.length === 0"
               @click="applySelectedSlots('unavailable')"
             >
-              Set Selected Unavailable
-            </el-button>
-            <el-button
-              type="success"
-              size="small"
+              Mark Unavailable
+            </button>
+            <button
+              type="button"
+              class="slot-action-btn action-available"
               :disabled="selectedSlotTimes.length === 0"
               @click="applySelectedSlots('available')"
             >
-              Set Selected Available
-            </el-button>
-            <el-button
-              size="small"
+              Mark Available
+            </button>
+            <button
+              type="button"
+              class="slot-action-btn action-clear"
               :disabled="selectedSlotTimes.length === 0"
               @click="clearSlotSelection"
             >
-              Clear Selection
-            </el-button>
+              Clear
+            </button>
           </div>
 
           <el-empty
@@ -549,12 +550,92 @@ onMounted(async () => {
 
 <style scoped>
 .day-summary-row {
-  margin-bottom: 12px;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 14px;
 }
-.slot-card-toolbar {
+
+.day-summary-row :deep(.el-radio-button) {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.day-summary-row :deep(.el-radio-button__inner) {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  padding: 7px 10px !important;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  border-radius: 999px !important;
+  border: 1px solid #d5dfef !important;
+  background: #f7f9fd !important;
+  color: #4a587c !important;
+  box-shadow: none !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.day-summary-row :deep(.el-radio-button__inner:hover) {
+  border-color: #b8c7e3 !important;
+  background: #eef3fb !important;
+  color: #2e3a59 !important;
+}
+
+.day-summary-row :deep(.el-radio-button.is-active .el-radio-button__inner),
+.day-summary-row :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  background: linear-gradient(135deg, #3e66e9 0%, #3058d9 100%) !important;
+  border-color: #3058d9 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 14px rgba(48, 88, 217, 0.22) !important;
+}
+
+@media (min-width: 1480px) {
+  .day-summary-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.slot-card-toolbar {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
   gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.slot-action-btn {
+  border: 1px solid transparent;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  white-space: nowrap;
+}
+
+.slot-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: grayscale(0.2);
+}
+
+.slot-action-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 1180px) {
+  .slot-card-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+  .slot-action-btn.action-clear {
+    grid-column: 1 / -1;
+  }
 }
 </style>

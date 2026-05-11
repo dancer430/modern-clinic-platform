@@ -12,7 +12,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="table-card" style="display: flex; justify-content: flex-end; padding: 12px 16px;">
+  <section class="table-card pagination-bar">
     <ElPagination
       :current-page="page"
       :page-size="pageSize"

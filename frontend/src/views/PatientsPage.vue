@@ -205,12 +205,12 @@ onMounted(async () => {
       Admin can create, edit, and delete patient accounts. Doctors can create patient accounts.
     </ElAlert>
 
-    <section class="filters">
+    <section class="filters filters-inline">
       <ElInput
         v-model="search"
-        placeholder="Search patient account"
+        placeholder="Search by name, email or phone"
         clearable
-        style="width: 280px;"
+        style="width: 320px;"
       />
       <ElSelect v-model="statusFilter" style="width: 160px;">
         <ElOption label="All status" value="all" />
