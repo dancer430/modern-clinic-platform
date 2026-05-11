@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import httpClient from '@/shared/http'
 
@@ -37,7 +37,9 @@ const records = ref<RecordViewItem[]>([])
 const doctors = ref<UserOption[]>([])
 const patients = ref<UserOption[]>([])
 
-const dateRange = ref<[Date, Date] | null>(null)
+const dateRange = ref<[string, string] | null>(null)
+const dateFrom = computed<string>(() => dateRange.value?.[0] || '')
+const dateTo = computed<string>(() => dateRange.value?.[1] || '')
 const selectedPatientId = ref<number | null>(null)
 const selectedDoctorId = ref<number | null>(null)
 const page = ref(1)
@@ -48,20 +50,8 @@ const displayName = (user: UserOption) => {
   return user.name?.trim() || user.username
 }
 
-const dateFrom = computed(() => {
-  if (!dateRange.value) return ''
-  const d = dateRange.value[0]
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-})
-
-const dateTo = computed(() => {
-  if (!dateRange.value) return ''
-  const d = dateRange.value[1]
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-})
-
 const hasActiveFilters = computed(
-  () => !!dateRange.value || !!selectedPatientId.value || !!selectedDoctorId.value || pageSize.value !== 10
+  () => !!dateFrom.value || !!dateTo.value || !!selectedPatientId.value || !!selectedDoctorId.value || pageSize.value !== 10
 )
 
 const recordsSorted = computed(() => {
@@ -175,17 +165,18 @@ onMounted(async () => {
       <el-date-picker
         v-model="dateRange"
         type="daterange"
-        range-separator="to"
+        unlink-panels
+        range-separator="—"
         start-placeholder="Start date"
         end-placeholder="End date"
-        clearable
-        style="width: 280px"
+        value-format="YYYY-MM-DD"
+        class="filter-control filter-date-range"
       />
       <el-select
         v-model="selectedPatientId"
         placeholder="All patients"
         clearable
-        style="width: 180px"
+        class="filter-control"
       >
         <el-option
           v-for="patient in patients"
@@ -198,7 +189,7 @@ onMounted(async () => {
         v-model="selectedDoctorId"
         placeholder="All doctors"
         clearable
-        style="width: 180px"
+        class="filter-control"
       >
         <el-option
           v-for="doctor in doctors"
@@ -207,8 +198,10 @@ onMounted(async () => {
           :value="doctor.id"
         />
       </el-select>
-      <el-button @click="applyFilters">Apply</el-button>
-      <el-button :disabled="!hasActiveFilters" @click="resetFilters">Reset</el-button>
+      <div class="filter-actions">
+        <el-button type="primary" class="filter-apply" @click="applyFilters">Apply</el-button>
+        <el-button class="filter-reset" :disabled="!hasActiveFilters" @click="resetFilters">Reset</el-button>
+      </div>
     </section>
 
     <section class="cards-grid">
@@ -235,6 +228,7 @@ onMounted(async () => {
 
       <el-empty
         v-if="!loading && recordsSorted.length === 0"
+        class="cards-grid-empty"
         description="No completed records available for current user scope."
       />
     </section>
@@ -256,6 +250,7 @@ onMounted(async () => {
       title="Medical Record Detail"
       width="680px"
       destroy-on-close
+      class="record-detail-dialog"
     >
       <el-descriptions v-if="selectedRecord" :column="2" border>
         <el-descriptions-item label="Patient">{{ selectedRecord.patient_name }}</el-descriptions-item>
@@ -278,5 +273,234 @@ onMounted(async () => {
 <style scoped>
 .record-card.record-thumbnail {
   cursor: pointer;
+}
+
+.records-filters {
+  display: grid !important;
+  grid-template-columns: minmax(320px, 360px) minmax(150px, 1fr) minmax(150px, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.filter-date-range :deep(.el-range-editor.el-input__wrapper) {
+  width: 100% !important;
+}
+
+.cards-grid-empty {
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: 32px 16px;
+}
+
+.filter-control {
+  width: 100% !important;
+  min-width: 0;
+}
+
+.filter-control :deep(.el-input__wrapper),
+.filter-control :deep(.el-range-editor.el-input__wrapper) {
+  background-color: #f8fbff;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px #cfd9ec inset;
+  padding: 0 12px;
+  min-height: 42px;
+  transition: box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.filter-control :deep(.el-input__wrapper:hover),
+.filter-control :deep(.el-range-editor.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #b8c7e3 inset;
+}
+
+.filter-control :deep(.el-input.is-focus .el-input__wrapper),
+.filter-control :deep(.el-range-editor.is-active.el-input__wrapper) {
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px #3f67ea inset, 0 0 0 3px rgba(63, 103, 234, 0.14);
+}
+
+.filter-control :deep(.el-input__inner),
+.filter-control :deep(.el-range-input) {
+  border: 0 !important;
+  background: transparent !important;
+  height: 40px !important;
+  font-size: 13px !important;
+  color: #1f2f4e !important;
+  box-shadow: none !important;
+}
+
+.filter-control :deep(.el-input__inner::placeholder),
+.filter-control :deep(.el-range-input::placeholder) {
+  color: #95a3c2;
+}
+
+.filter-control :deep(.el-range-separator) {
+  color: #95a3c2;
+  font-size: 12px;
+  line-height: 40px;
+  padding: 0 4px;
+}
+
+.filter-control :deep(.el-input__prefix-inner),
+.filter-control :deep(.el-input__suffix-inner) {
+  color: #8895b6;
+}
+
+.filter-actions {
+  display: inline-flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.filter-actions :deep(.el-button) {
+  height: 42px;
+  border-radius: 12px;
+  padding: 0 18px;
+  font-weight: 600;
+  font-size: 13px;
+  margin: 0;
+}
+
+.filter-apply :deep(.el-button),
+.filter-actions :deep(.el-button.filter-apply),
+.filter-actions :deep(.filter-apply) {
+  border: 0;
+  background: linear-gradient(135deg, #3e66e9 0%, #3058d9 100%);
+  box-shadow: 0 6px 14px rgba(48, 88, 217, 0.18);
+  color: #ffffff;
+}
+
+.filter-actions :deep(.filter-apply:hover) {
+  filter: brightness(1.04);
+  box-shadow: 0 10px 22px rgba(48, 88, 217, 0.26);
+  transform: translateY(-1px);
+}
+
+.filter-actions :deep(.filter-reset) {
+  border: 1px solid #cfd9ec;
+  background: #f8fbff;
+  color: #4a587c;
+}
+
+.filter-actions :deep(.filter-reset:hover:not(:disabled)) {
+  border-color: #b8c7e3;
+  background: #eef3fb;
+}
+
+.filter-actions :deep(.filter-reset:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1180px) {
+  .records-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .filter-date-range {
+    grid-column: 1 / -1;
+  }
+  .filter-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+</style>
+
+<style>
+.record-detail-dialog.el-dialog {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(20, 38, 80, 0.22);
+}
+
+.record-detail-dialog .el-dialog__header {
+  margin: 0;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.record-detail-dialog .el-dialog__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1b2a4a;
+  letter-spacing: -0.1px;
+}
+
+.record-detail-dialog .el-dialog__headerbtn {
+  top: 14px;
+  right: 14px;
+}
+
+.record-detail-dialog .el-dialog__close {
+  color: #8895b6;
+  font-size: 18px;
+}
+
+.record-detail-dialog .el-dialog__close:hover {
+  color: #3058d9;
+}
+
+.record-detail-dialog .el-dialog__body {
+  padding: 18px 22px;
+}
+
+.record-detail-dialog .el-dialog__footer {
+  padding: 14px 22px 18px;
+  border-top: 1px solid #eef2f7;
+}
+
+.record-detail-dialog .el-descriptions {
+  width: 100%;
+}
+
+.record-detail-dialog .el-descriptions__body {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e6ecf6;
+  background: #ffffff;
+}
+
+.record-detail-dialog .el-descriptions__body .el-descriptions__table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+.record-detail-dialog .el-descriptions__cell {
+  border-color: #eaf0f8 !important;
+  word-break: break-word;
+  vertical-align: top;
+}
+
+.record-detail-dialog .el-descriptions__label {
+  background: #f8fbff !important;
+  color: #475982 !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.1px;
+  padding: 12px 14px !important;
+  width: 130px;
+}
+
+.record-detail-dialog .el-descriptions__content {
+  font-size: 13px !important;
+  color: #1f2f4e !important;
+  padding: 12px 14px !important;
+  background: #ffffff !important;
+  line-height: 1.55;
+}
+
+.record-detail-dialog .el-dialog__footer .el-button {
+  height: 38px;
+  border-radius: 10px;
+  padding: 0 18px;
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid #cfd9ec;
+  background: #f8fbff;
+  color: #4a587c;
+}
+
+.record-detail-dialog .el-dialog__footer .el-button:hover {
+  border-color: #b8c7e3;
+  background: #eef3fb;
 }
 </style>

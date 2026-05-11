@@ -5,7 +5,7 @@ import { useAuthStore } from '@/features/auth'
 import type { Role } from '@/features/auth'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
-import { Odometer, User, UserFilled, Calendar, Clock, Document, SwitchButton } from '@element-plus/icons-vue'
+import { DataLine, FirstAidKit, User, Calendar, Timer, Notebook, SwitchButton } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,12 +22,12 @@ interface NavItem {
 }
 
 const navItems: Array<NavItem> = [
-  { path: '/dashboard', label: 'Dashboard', icon: Odometer },
-  { path: '/doctors', label: 'Doctors', icon: User },
-  { path: '/patients', label: 'Patients', icon: UserFilled },
+  { path: '/dashboard', label: 'Dashboard', icon: DataLine },
+  { path: '/doctors', label: 'Doctors', icon: FirstAidKit },
+  { path: '/patients', label: 'Patients', icon: User },
   { path: '/appointments', label: 'Appointments', icon: Calendar },
-  { path: '/timeslots', label: 'My Schedule', icon: Clock, roles: ['doctor', 'admin'] },
-  { path: '/records', label: 'Medical Records', icon: Document, roles: ['doctor', 'admin'] },
+  { path: '/timeslots', label: 'My Schedule', icon: Timer, roles: ['doctor', 'admin'] },
+  { path: '/records', label: 'Medical Records', icon: Notebook, roles: ['doctor', 'admin'] },
 ]
 
 const visibleNavItems = computed(() =>

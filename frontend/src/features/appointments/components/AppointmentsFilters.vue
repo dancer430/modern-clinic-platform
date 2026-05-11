@@ -15,7 +15,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="filters appointments-filters">
+  <section class="filters filters-inline appointments-filters">
     <ElInput
       :model-value="search"
       placeholder="Search patient/doctor/reason"
@@ -35,7 +35,7 @@ const emit = defineEmits<{
       <ElOption label="completed" value="completed" />
       <ElOption label="cancelled" value="cancelled" />
     </ElSelect>
-    <ElButton @click="emit('search')">Search</ElButton>
+    <ElButton type="primary" @click="emit('search')">Search</ElButton>
     <ElButton :disabled="!search && status === 'all'" @click="emit('reset')">Reset</ElButton>
   </section>
 </template>
