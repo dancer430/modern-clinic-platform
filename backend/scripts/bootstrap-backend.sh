@@ -27,26 +27,62 @@ PY
 
 if [ -n "${MINIO_ENDPOINT:-}" ] && [ -n "${MINIO_ROOT_USER:-}" ] && [ -n "${MINIO_ROOT_PASSWORD:-}" ]; then
   echo "[bootstrap] configuring MinIO bucket..."
-  mc alias set local "$MINIO_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
-  if ! mc ls "local/${MINIO_BUCKET:-clinic-media}" >/dev/null 2>&1; then
-    mc mb "local/${MINIO_BUCKET:-clinic-media}"
-  fi
-  # Public read for media/ prefix only.
-  cat > /tmp/policy.json <<'POLICY'
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {"AWS": ["*"]},
-      "Action": ["s3:GetObject"],
-      "Resource": ["arn:aws:s3:::__BUCKET__/media/*"]
-    }
-  ]
+  python - <<'PY'
+import json
+import os
+import time
+
+import boto3
+from botocore.client import Config
+from botocore.exceptions import ClientError, EndpointConnectionError
+
+endpoint = os.environ["MINIO_ENDPOINT"]
+access_key = os.environ["MINIO_ROOT_USER"]
+secret_key = os.environ["MINIO_ROOT_PASSWORD"]
+bucket = os.environ.get("MINIO_BUCKET", "clinic-media")
+
+s3 = boto3.client(
+    "s3",
+    endpoint_url=endpoint,
+    aws_access_key_id=access_key,
+    aws_secret_access_key=secret_key,
+    config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+    region_name="us-east-1",
+)
+
+for _ in range(60):
+    try:
+        s3.list_buckets()
+        break
+    except EndpointConnectionError:
+        time.sleep(1)
+else:
+    raise SystemExit("[bootstrap] MinIO endpoint not reachable after timeout")
+
+try:
+    s3.head_bucket(Bucket=bucket)
+    print(f"[bootstrap] bucket '{bucket}' exists")
+except ClientError as exc:
+    if exc.response["Error"]["Code"] in ("404", "NoSuchBucket", "NoSuchKey"):
+        s3.create_bucket(Bucket=bucket)
+        print(f"[bootstrap] bucket '{bucket}' created")
+    else:
+        raise
+
+policy = {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {"AWS": ["*"]},
+            "Action": ["s3:GetObject"],
+            "Resource": [f"arn:aws:s3:::{bucket}/media/*"],
+        }
+    ],
 }
-POLICY
-  sed -i "s/__BUCKET__/${MINIO_BUCKET:-clinic-media}/g" /tmp/policy.json
-  mc anonymous set-json /tmp/policy.json "local/${MINIO_BUCKET:-clinic-media}" || true
+s3.put_bucket_policy(Bucket=bucket, Policy=json.dumps(policy))
+print(f"[bootstrap] anonymous read policy applied to {bucket}/media/*")
+PY
   echo "[bootstrap] MinIO bucket ready"
 fi
 

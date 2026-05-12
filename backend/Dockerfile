@@ -19,9 +19,6 @@ RUN if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt -i "$PIP_INDEX_URL" --trusted-host "$PIP_TRUSTED_HOST"
 
-RUN curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc \
-    && chmod +x /usr/local/bin/mc
-
 COPY . .
 RUN chmod +x /app/scripts/bootstrap-backend.sh
 
