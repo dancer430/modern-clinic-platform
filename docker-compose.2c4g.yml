@@ -29,6 +29,9 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  minio:
+    mem_limit: 256m
+
   frontend:
     logging:
       driver: json-file

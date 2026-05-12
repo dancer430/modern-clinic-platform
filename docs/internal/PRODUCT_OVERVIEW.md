@@ -87,6 +87,16 @@ The platform supports role-based access for **Admin**, **Doctor**, and **Patient
 - Avatar upload (PNG/JPG, <= 1MB)
 - Secure password change with current password + confirmation
 
+## 3.7 Content Portal
+
+- Public department directory at `/portal/departments` and detail pages at `/portal/departments/<slug>`
+- Public doctor list at `/portal/doctors` and detail at `/portal/doctors/<id>`
+- Login page left panel shows a carousel of published departments with quick links to `Browse departments` and `Find a doctor`
+- Admin manages department content directly (CRUD)
+- Doctor introductions follow a draft → submit → admin approve/reject → publish workflow with status states `none` / `pending` / `approved` / `rejected`
+- Rich text supports inline images served from MinIO (S3-compatible)
+- `sitemap.xml` exposes published portal URLs for search engines
+
 ---
 
 ## 4. UX and Interaction Highlights

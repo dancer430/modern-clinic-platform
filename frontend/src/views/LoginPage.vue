@@ -5,6 +5,7 @@ import { useAuthStore } from '@/features/auth'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import BrandLogo from '@/components/BrandLogo.vue'
+import DepartmentCarousel from '@/features/content/components/DepartmentCarousel.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -51,6 +52,14 @@ const login = async () => {
       <div class="login-hero">
         <h1>Streamline Your Medical Practice</h1>
         <p>Manage doctors, patients, and appointments all in one place.</p>
+      </div>
+
+      <div class="login-portal-preview">
+        <DepartmentCarousel />
+        <div class="login-portal-cta">
+          <ElButton class="cta-btn" @click="router.push('/portal/departments')">Browse departments</ElButton>
+          <ElButton class="cta-btn" @click="router.push('/portal/doctors')">Find a doctor</ElButton>
+        </div>
       </div>
     </section>
 
@@ -309,6 +318,27 @@ const login = async () => {
   box-shadow: 0 6px 14px rgba(48, 88, 217, 0.22);
 }
 
+.login-portal-preview {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.login-portal-cta {
+  display: flex;
+  gap: 12px;
+}
+.cta-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  border-radius: 12px;
+  padding: 10px 18px;
+}
+.cta-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 @media (max-width: 880px) {
   .login-page {
     grid-template-columns: 1fr;
@@ -323,5 +353,6 @@ const login = async () => {
   .login-form-area {
     padding: 36px 24px;
   }
+  .login-portal-preview { margin-top: 20px; }
 }
 </style>

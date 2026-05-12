@@ -5,7 +5,7 @@ import { useAuthStore } from '@/features/auth'
 import type { Role } from '@/features/auth'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
-import { DataLine, FirstAidKit, User, Calendar, Timer, Notebook, SwitchButton } from '@element-plus/icons-vue'
+import { DataLine, FirstAidKit, User, Calendar, Timer, Notebook, SwitchButton, OfficeBuilding, Memo, Edit } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,6 +28,10 @@ const navItems: Array<NavItem> = [
   { path: '/appointments', label: 'Appointments', icon: Calendar },
   { path: '/timeslots', label: 'My Schedule', icon: Timer, roles: ['doctor', 'admin'] },
   { path: '/records', label: 'Medical Records', icon: Notebook, roles: ['doctor', 'admin'] },
+  { path: '/admin/departments', label: 'Departments', icon: OfficeBuilding, roles: ['admin'] },
+  { path: '/admin/doctor-profiles', label: 'Doctor profiles', icon: FirstAidKit, roles: ['admin'] },
+  { path: '/admin/reviews', label: 'Pending reviews', icon: Memo, roles: ['admin'] },
+  { path: '/doctor/profile', label: 'My public profile', icon: Edit, roles: ['doctor'] },
 ]
 
 const visibleNavItems = computed(() =>
@@ -48,6 +52,16 @@ const pageTitleMap: Record<string, string> = {
   timeslots: 'Schedule',
   records: 'Medical Records',
   profile: 'Personal Center',
+  'admin-department-list': 'Departments',
+  'admin-department-edit': 'Department',
+  'admin-doctor-profile-list': 'Doctor Profiles',
+  'admin-doctor-profile-edit': 'Doctor Profile',
+  'admin-pending-reviews': 'Pending Reviews',
+  'doctor-my-profile': 'My Public Profile',
+  'portal-department-list': 'Departments',
+  'portal-department-detail': 'Department',
+  'portal-doctor-list': 'Doctors',
+  'portal-doctor-detail': 'Doctor',
 }
 
 const currentPageTitle = computed(() => {

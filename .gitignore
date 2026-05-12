@@ -48,3 +48,6 @@ media/
 
 # Vite
 frontend/dist/
+
+# Backend upload test artifacts
+backend/inline/

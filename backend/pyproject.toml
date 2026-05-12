@@ -9,7 +9,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["users", "appointments"]
+source = ["users", "appointments", "content"]
 branch = true
 
 [tool.coverage.report]

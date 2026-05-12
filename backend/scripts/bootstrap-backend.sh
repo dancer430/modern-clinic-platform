@@ -25,6 +25,31 @@ else:
     raise SystemExit("[bootstrap] database not ready after timeout")
 PY
 
+if [ -n "${MINIO_ENDPOINT:-}" ] && [ -n "${MINIO_ROOT_USER:-}" ] && [ -n "${MINIO_ROOT_PASSWORD:-}" ]; then
+  echo "[bootstrap] configuring MinIO bucket..."
+  mc alias set local "$MINIO_ENDPOINT" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null
+  if ! mc ls "local/${MINIO_BUCKET:-clinic-media}" >/dev/null 2>&1; then
+    mc mb "local/${MINIO_BUCKET:-clinic-media}"
+  fi
+  # Public read for media/ prefix only.
+  cat > /tmp/policy.json <<'POLICY'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {"AWS": ["*"]},
+      "Action": ["s3:GetObject"],
+      "Resource": ["arn:aws:s3:::__BUCKET__/media/*"]
+    }
+  ]
+}
+POLICY
+  sed -i "s/__BUCKET__/${MINIO_BUCKET:-clinic-media}/g" /tmp/policy.json
+  mc anonymous set-json /tmp/policy.json "local/${MINIO_BUCKET:-clinic-media}" || true
+  echo "[bootstrap] MinIO bucket ready"
+fi
+
 echo "[bootstrap] running migrations..."
 python manage.py migrate --noinput
 

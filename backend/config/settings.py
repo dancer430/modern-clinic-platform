@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "users",
     "appointments",
+    "content",
 ]
 
 MIDDLEWARE = [
@@ -126,6 +127,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
@@ -135,6 +139,10 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_THROTTLE_CLASSES": (),
+    "DEFAULT_THROTTLE_RATES": {
+        "portal_anon": "60/min",
+    },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "common.errors.custom_exception_handler",
 }
@@ -186,3 +194,37 @@ LOGGING = {
         },
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# Object storage (MinIO / S3-compatible)
+# When MINIO_ENDPOINT is set the default file storage switches to S3;
+# otherwise local filesystem storage is used (development / CI).
+# ---------------------------------------------------------------------------
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "")
+MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_ENDPOINT", "")
+MINIO_BUCKET = os.getenv("MINIO_BUCKET", "clinic-media")
+MEDIA_UPLOAD_MAX_BYTES = int(os.getenv("MEDIA_UPLOAD_MAX_BYTES", str(5 * 1024 * 1024)))
+
+if MINIO_ENDPOINT:
+    AWS_ACCESS_KEY_ID = os.getenv("MINIO_ROOT_USER")
+    AWS_SECRET_ACCESS_KEY = os.getenv("MINIO_ROOT_PASSWORD")
+    AWS_STORAGE_BUCKET_NAME = MINIO_BUCKET
+    AWS_S3_ENDPOINT_URL = MINIO_ENDPOINT
+    AWS_S3_ADDRESSING_STYLE = "path"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+    AWS_LOCATION = "media"
+    public_host = MINIO_PUBLIC_ENDPOINT.replace("http://", "").replace("https://", "").rstrip("/")
+    AWS_S3_CUSTOM_DOMAIN = f"{public_host}/{MINIO_BUCKET}" if public_host else None
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {},
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }

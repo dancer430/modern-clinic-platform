@@ -13,11 +13,14 @@ RUN if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
     sed -i "s|deb.debian.org|$APT_MIRROR|g" /etc/apt/sources.list.d/debian.sources; \
   fi \
   && apt-get update -o Acquire::Retries=5 -o Acquire::http::Timeout=20 \
-  && apt-get install -y --no-install-recommends build-essential libpq-dev \
+  && apt-get install -y --no-install-recommends build-essential libpq-dev curl \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt -i "$PIP_INDEX_URL" --trusted-host "$PIP_TRUSTED_HOST"
+
+RUN curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc \
+    && chmod +x /usr/local/bin/mc
 
 COPY . .
 RUN chmod +x /app/scripts/bootstrap-backend.sh

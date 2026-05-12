@@ -16,10 +16,10 @@ codebase.
 | `src/main.ts` | App entry. Mounts the root component, installs Pinia, the router, and Element Plus. |
 | `src/App.vue` | Root layout shell. |
 | `src/router/` | Vue Router config and route guards. `__tests__/` covers role-aware guards. |
-| `src/features/` | Vertical feature modules — each owns its own API client, components, pages, composables, types, and tests. Currently `appointments/` and `auth/`. New features should follow this boundary. |
+| `src/features/` | Vertical feature modules — each owns its own API client, components, pages, composables, types, and tests. Currently `appointments/`, `auth/`, and `content/` (public portal at `/portal/*`, admin content management, doctor self-service profile, login-page department carousel). New features should follow this boundary. |
 | `src/views/` | Page-level views that have not yet been migrated into `features/` (Dashboard, Doctors, Patients, Profile, Records, TimeSlots, Login). The active refactor is moving these into the feature structure. |
 | `src/shared/http/` | Axios instance, token-refresh interceptor, and the uniform error envelope adapter. Imported by every feature's `api.ts`. |
-| `src/components/` | Cross-feature UI primitives (currently `BrandLogo.vue`). |
+| `src/components/` | Cross-feature UI primitives (currently `BrandLogo.vue` and `RichTextEditor.vue` — a Wangeditor 5 wrapper with media upload). |
 | `src/composables/` | Cross-feature composition functions (currently `usePlatformBrand.ts`). |
 | `src/utils/` | Pure helpers with no Vue dependency (currently `imageUtils.ts` for avatar / attachment compression). |
 | `src/assets/`, `src/style.css` | Static assets and global styles. |
