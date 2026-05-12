@@ -220,8 +220,9 @@ onMounted(load)
 <style scoped>
 .my-profile {
   padding: 24px clamp(24px, 4vw, 48px) 48px;
-  max-width: 1280px;
+  max-width: 1600px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .my-profile__header {
@@ -343,8 +344,8 @@ onMounted(load)
 
 .my-profile__row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: minmax(240px, 360px) minmax(240px, 360px);
+  gap: 20px;
 }
 
 .my-profile__row :deep(.el-form-item) {

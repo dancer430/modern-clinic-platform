@@ -79,7 +79,7 @@ onBeforeUnmount(() => {
       :default-config="editorConfig"
       :mode="'default'"
       :default-html="modelValue"
-      style="height: 320px; overflow-y: auto"
+      style="height: 480px; overflow-y: auto; width: 100%"
       @on-created="handleCreated"
       @on-change="handleChange"
     />
@@ -91,6 +91,13 @@ onBeforeUnmount(() => {
   border: 1px solid #d0d7e2;
   border-radius: 10px;
   overflow: hidden;
+  width: 100%;
+}
+.rich-text-editor :deep(.w-e-text-container) {
+  width: 100% !important;
+}
+.rich-text-editor :deep(.w-e-toolbar) {
+  width: 100% !important;
 }
 .rich-text-editor.is-disabled {
   opacity: 0.6;
