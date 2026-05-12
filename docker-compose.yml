@@ -29,7 +29,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     healthcheck:
-      test: ["CMD", "sh", "-c", "wget -q -O- http://localhost:9000/minio/health/live || exit 1"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 10
