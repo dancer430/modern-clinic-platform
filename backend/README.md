@@ -18,6 +18,7 @@ operations on the backend codebase.
 | `users/` | Custom `User` model (with `Role`), authentication views, profile / password / avatar endpoints, doctor & patient management, plus the `check_env` management command under `users/management/commands/`. |
 | `appointments/` | Appointment model, schedule slots, status state machine (`pending → confirmed → completed`/`cancelled`), service layer, list filtering, and pagination. |
 | `common/` | Cross-cutting infrastructure: uniform error envelope (`errors.py`) and structured logging helpers (`logging.py`). |
+| `content/` | Public-facing department and doctor introductions with draft → admin-review → publish workflow; MinIO-backed rich text media; sitemap. |
 | `tests/` | Pytest suites mirroring the apps (`tests/users/`, `tests/appointments/`, `tests/common/`), plus shared `factories.py` and `conftest.py`. |
 | `scripts/` | Container entry-point scripts. `bootstrap-backend.sh` waits for the DB, runs migrations, syncs the superuser from env, and starts gunicorn. |
 | `schema.yaml` | Last regenerated OpenAPI schema. Source of truth for the Swagger UI. |

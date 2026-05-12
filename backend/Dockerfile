@@ -13,7 +13,7 @@ RUN if [ "$APT_MIRROR" != "deb.debian.org" ]; then \
     sed -i "s|deb.debian.org|$APT_MIRROR|g" /etc/apt/sources.list.d/debian.sources; \
   fi \
   && apt-get update -o Acquire::Retries=5 -o Acquire::http::Timeout=20 \
-  && apt-get install -y --no-install-recommends build-essential libpq-dev \
+  && apt-get install -y --no-install-recommends build-essential libpq-dev curl \
   && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt ./

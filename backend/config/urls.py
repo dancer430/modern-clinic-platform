@@ -23,6 +23,8 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from sitemap_views import sitemap
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
@@ -36,6 +38,8 @@ urlpatterns = [
         SpectacularRedocView.as_view(url_name="api-schema"),
         name="api-docs-redoc",
     ),
+    path("sitemap.xml", sitemap),
     path("api/auth/", include("users.urls")),
     path("api/", include("appointments.urls")),
+    path("api/", include("content.urls")),
 ]

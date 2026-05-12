@@ -6,6 +6,7 @@ import factory
 from factory.django import DjangoModelFactory
 
 from appointments.models import Appointment, DoctorScheduleSlot
+from content.models import Department, DoctorProfile
 from users.models import User
 
 
@@ -50,3 +51,26 @@ class DoctorScheduleSlotFactory(DjangoModelFactory):
     slot_date = factory.LazyFunction(lambda: dt.date.today() + dt.timedelta(days=1))
     slot_time = dt.time(9, 0)
     is_available = True
+
+
+class DepartmentFactory(DjangoModelFactory):
+    class Meta:
+        model = Department
+
+    name = factory.Sequence(lambda n: f"Department {n}")
+    slug = factory.Sequence(lambda n: f"department-{n}")
+    summary = "Sample summary"
+    description_html = "<p>Sample description</p>"
+    is_published = True
+    display_order = 0
+
+
+class DoctorProfileFactory(DjangoModelFactory):
+    class Meta:
+        model = DoctorProfile
+
+    user = factory.SubFactory(UserFactory, role="doctor")
+    title = "Consultant"
+    specialty = "General"
+    bio_published_html = "<p>Bio</p>"
+    is_published = True

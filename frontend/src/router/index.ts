@@ -28,6 +28,30 @@ const router = createRouter({
       component: () => import('@/views/LoginPage.vue'),
       meta: { requiresAuth: false },
     },
+    {
+      path: '/portal/departments',
+      name: 'portal-department-list',
+      component: () => import('@/features/content/pages/portal/PortalDepartmentList.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/portal/departments/:slug',
+      name: 'portal-department-detail',
+      component: () => import('@/features/content/pages/portal/PortalDepartmentDetail.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/portal/doctors',
+      name: 'portal-doctor-list',
+      component: () => import('@/features/content/pages/portal/PortalDoctorList.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/portal/doctors/:userId',
+      name: 'portal-doctor-detail',
+      component: () => import('@/features/content/pages/portal/PortalDoctorDetail.vue'),
+      meta: { requiresAuth: false },
+    },
     { path: '/', redirect: '/login' },
     {
       path: '/dashboard',
@@ -70,6 +94,42 @@ const router = createRouter({
       name: 'profile',
       component: () => import('@/views/ProfilePage.vue'),
       meta: { requiresAuth: true, roles: ROLES_ALL },
+    },
+    {
+      path: '/admin/departments',
+      name: 'admin-department-list',
+      component: () => import('@/features/content/pages/admin/AdminDepartmentList.vue'),
+      meta: { requiresAuth: true, roles: ['admin'] },
+    },
+    {
+      path: '/admin/departments/:id',
+      name: 'admin-department-edit',
+      component: () => import('@/features/content/pages/admin/AdminDepartmentEdit.vue'),
+      meta: { requiresAuth: true, roles: ['admin'] },
+    },
+    {
+      path: '/admin/doctor-profiles',
+      name: 'admin-doctor-profile-list',
+      component: () => import('@/features/content/pages/admin/AdminDoctorProfileList.vue'),
+      meta: { requiresAuth: true, roles: ['admin'] },
+    },
+    {
+      path: '/admin/doctor-profiles/:userId',
+      name: 'admin-doctor-profile-edit',
+      component: () => import('@/features/content/pages/admin/AdminDoctorProfileEdit.vue'),
+      meta: { requiresAuth: true, roles: ['admin'] },
+    },
+    {
+      path: '/admin/reviews',
+      name: 'admin-pending-reviews',
+      component: () => import('@/features/content/pages/admin/AdminPendingReviews.vue'),
+      meta: { requiresAuth: true, roles: ['admin'] },
+    },
+    {
+      path: '/doctor/profile',
+      name: 'doctor-my-profile',
+      component: () => import('@/features/content/pages/doctor/DoctorMyProfile.vue'),
+      meta: { requiresAuth: true, roles: ['doctor'] },
     },
   ],
 })

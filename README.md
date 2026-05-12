@@ -15,6 +15,7 @@ supported). Podman is auto-detected as a fallback.
 cp .env.example .env
 # edit .env: set DJANGO_SECRET_KEY, POSTGRES_PASSWORD,
 # DJANGO_SUPERUSER_PASSWORD before first boot
+# content portal media: MINIO_ROOT_USER, MINIO_ROOT_PASSWORD (see .env.example)
 sh ./init-stack.sh
 ```
 
@@ -64,6 +65,7 @@ If something goes wrong on first boot, jump to
 - Simple JWT (refresh + blacklist)
 - drf-spectacular (OpenAPI / Swagger)
 - Database: SQLite for local dev, PostgreSQL in Docker / production
+- MinIO (S3-compatible object storage for content portal media)
 
 ### Frontend
 - Vue 3 + TypeScript
