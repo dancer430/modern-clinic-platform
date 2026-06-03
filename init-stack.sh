@@ -99,6 +99,66 @@ install_docker_official_repo_debian() {
   run_as_root apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 }
 
+# Install just the docker compose v2 CLI plugin from a reachable docker-ce apt
+# mirror. The official download.docker.com is frequently unreachable from
+# mainland China (intermittent connection reset), so China mirrors are tried
+# first, falling back to the official repo.
+install_docker_compose_v2_plugin() {
+  [ -f /etc/os-release ] || return 1
+  . /etc/os-release
+  case "${ID:-} ${ID_LIKE:-}" in
+    *debian*|*ubuntu*) : ;;
+    *) return 1 ;;
+  esac
+  CODENAME=${VERSION_CODENAME:-}
+  [ -n "$CODENAME" ] || return 1
+  DISTRO=ubuntu
+  [ "$ID" = debian ] && DISTRO=debian
+
+  run_as_root apt-get install -y ca-certificates curl gnupg >/dev/null 2>&1 || true
+  run_as_root install -m 0755 -d /etc/apt/keyrings
+
+  for base in \
+    "https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/$DISTRO" \
+    "https://mirrors.aliyun.com/docker-ce/linux/$DISTRO" \
+    "https://download.docker.com/linux/$DISTRO"; do
+    printf '%s\n' "[init] installing docker compose v2 plugin from $base ..."
+    # Fetch the key to a temp file first so we can detect a failed download
+    # (a curl | gpg pipe would hide curl's exit status behind gpg's).
+    TMPKEY=$(mktemp 2>/dev/null || echo "/tmp/docker-ce-key.$$")
+    if ! curl -fsSL "$base/gpg" -o "$TMPKEY" 2>/dev/null || [ ! -s "$TMPKEY" ]; then
+      rm -f "$TMPKEY"
+      continue
+    fi
+    if ! run_as_root gpg --dearmor -o /etc/apt/keyrings/docker.gpg <"$TMPKEY" 2>/dev/null; then
+      rm -f "$TMPKEY"
+      continue
+    fi
+    rm -f "$TMPKEY"
+    run_as_root chmod a+r /etc/apt/keyrings/docker.gpg
+    printf '%s\n' "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] $base $CODENAME stable" | run_as_root tee /etc/apt/sources.list.d/docker.list >/dev/null
+    if run_as_root apt-get update >/dev/null 2>&1 && run_as_root apt-get install -y docker-compose-plugin >/dev/null 2>&1; then
+      if docker compose version >/dev/null 2>&1; then
+        printf '%s\n' "[init] docker compose v2 plugin installed."
+        return 0
+      fi
+    fi
+  done
+  printf '%s\n' "[init] failed to install docker compose v2 plugin from all mirrors" >&2
+  return 1
+}
+
+# Returns 0 if 'docker compose' v2 is usable, attempting a one-time plugin
+# install from apt mirrors if it is missing (e.g. only legacy v1 is present).
+COMPOSE_V2_INSTALL_TRIED=0
+ensure_docker_compose_v2() {
+  docker compose version >/dev/null 2>&1 && return 0
+  [ "$COMPOSE_V2_INSTALL_TRIED" = "1" ] && return 1
+  COMPOSE_V2_INSTALL_TRIED=1
+  install_docker_compose_v2_plugin || return 1
+  docker compose version >/dev/null 2>&1
+}
+
 install_podman_linux() {
   if [ ! -f /etc/os-release ]; then
     printf '%s\n' "[init] /etc/os-release not found, cannot auto-install podman" >&2
@@ -513,7 +573,7 @@ select_runtime_and_compose() {
     fi
     if has_cmd docker; then
       ensure_docker_ready
-      if docker compose version >/dev/null 2>&1; then
+      if ensure_docker_compose_v2; then
         RUNTIME_KIND="docker"
         COMPOSE_KIND="docker_compose"
         return
@@ -560,7 +620,7 @@ select_runtime_and_compose() {
 
   if has_cmd docker; then
     ensure_docker_ready
-    if docker compose version >/dev/null 2>&1; then
+    if ensure_docker_compose_v2; then
       RUNTIME_KIND="docker"
       COMPOSE_KIND="docker_compose"
       return
@@ -598,7 +658,7 @@ select_runtime_and_compose() {
 
   if has_cmd docker; then
     ensure_docker_ready
-    if docker compose version >/dev/null 2>&1; then
+    if ensure_docker_compose_v2; then
       RUNTIME_KIND="docker"
       COMPOSE_KIND="docker_compose"
       return
