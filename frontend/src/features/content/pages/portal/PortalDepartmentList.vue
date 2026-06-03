@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DepartmentCard from '../../components/DepartmentCard.vue'
 import { usePortalDepartments } from '../../composables/usePortalDepartments'
 
+const { t } = useI18n()
 const { items, loading, error, load } = usePortalDepartments()
 const router = useRouter()
 
@@ -13,10 +15,10 @@ onMounted(() => load())
 <template>
   <main class="portal-page">
     <header class="portal-page__header">
-      <h1>Departments</h1>
-      <p>Browse our clinical departments and find the right team.</p>
+      <h1>{{ t('portal.departmentList.title') }}</h1>
+      <p>{{ t('portal.departmentList.subtitle') }}</p>
     </header>
-    <div v-if="loading" class="portal-page__loading">Loading…</div>
+    <div v-if="loading" class="portal-page__loading">{{ t('portal.loading') }}</div>
     <div v-else-if="error" class="portal-page__error">{{ error }}</div>
     <div v-else class="portal-page__grid">
       <DepartmentCard

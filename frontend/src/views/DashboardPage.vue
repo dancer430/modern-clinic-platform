@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import httpClient from '@/shared/http'
+
+const { t } = useI18n()
 
 type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 
@@ -44,13 +47,13 @@ const completedCount = computed(() => todayAppointments.value.filter((item) => i
 const cancelledCount = computed(() => todayAppointments.value.filter((item) => item.status === 'cancelled').length)
 
 const stats = computed(() => [
-  { label: "Today's Appointments", value: todayAppointments.value.length, trend: `${today.value}`, tone: 'blue' },
-  { label: 'Pending Today', value: pendingCount.value, trend: 'Need doctor confirmation', tone: 'orange' },
-  { label: 'Confirmed Today', value: confirmedCount.value, trend: 'Ready for visit', tone: 'cyan' },
+  { label: t('dashboard.todaysAppointments'), value: todayAppointments.value.length, trend: `${today.value}`, tone: 'blue' },
+  { label: t('dashboard.pendingToday'), value: pendingCount.value, trend: t('dashboard.needConfirmation'), tone: 'orange' },
+  { label: t('dashboard.confirmedToday'), value: confirmedCount.value, trend: t('dashboard.readyForVisit'), tone: 'cyan' },
   {
-    label: 'Completed Today',
+    label: t('dashboard.completedToday'),
     value: completedCount.value,
-    trend: `${cancelledCount.value} cancelled`,
+    trend: t('dashboard.cancelledSuffix', { count: cancelledCount.value }),
     tone: 'green',
   },
 ])
@@ -86,10 +89,10 @@ const statusPieStyle = computed(() => ({
 }))
 
 const statusLegend = computed(() => [
-  { label: 'Pending', value: pendingCount.value, tone: 'pending' },
-  { label: 'Confirmed', value: confirmedCount.value, tone: 'confirmed' },
-  { label: 'Completed', value: completedCount.value, tone: 'completed' },
-  { label: 'Cancelled', value: cancelledCount.value, tone: 'cancelled' },
+  { label: t('status.pending'), value: pendingCount.value, tone: 'pending' },
+  { label: t('status.confirmed'), value: confirmedCount.value, tone: 'confirmed' },
+  { label: t('status.completed'), value: completedCount.value, tone: 'completed' },
+  { label: t('status.cancelled'), value: cancelledCount.value, tone: 'cancelled' },
 ])
 
 const statusTagType = (status: AppointmentStatus) => {
@@ -105,25 +108,25 @@ const statusTagType = (status: AppointmentStatus) => {
 const quickActions = computed(() => [
   {
     key: 'doctors',
-    title: 'Manage Doctors',
-    description: 'Update doctor accounts and profile data.',
-    note: 'Accounts',
+    title: t('dashboard.manageDoctors'),
+    description: t('dashboard.manageDoctorsDesc'),
+    note: t('dashboard.accounts'),
     icon: 'DR',
     path: '/doctors',
   },
   {
     key: 'patients',
-    title: 'Manage Patients',
-    description: 'Create and maintain patient account records.',
-    note: 'Profiles',
+    title: t('dashboard.managePatients'),
+    description: t('dashboard.managePatientsDesc'),
+    note: t('dashboard.profiles'),
     icon: 'PT',
     path: '/patients',
   },
   {
     key: 'schedule',
-    title: 'Open Schedule',
-    description: 'Adjust slot availability for upcoming sessions.',
-    note: `${pendingCount.value} pending`,
+    title: t('dashboard.openSchedule'),
+    description: t('dashboard.openScheduleDesc'),
+    note: t('dashboard.pendingNote', { count: pendingCount.value }),
     icon: 'SC',
     path: '/timeslots',
   },
@@ -142,7 +145,7 @@ const fetchDashboardData = async () => {
       ? appointmentData
       : appointmentData.results
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to load dashboard data')
+    ElMessage.error(error.response?.data?.detail || t('dashboard.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -157,8 +160,8 @@ onMounted(async () => {
   <div class="page dashboard-page">
     <section class="hero-row">
       <div>
-        <h2>Today Operations</h2>
-        <p>Focus on today appointments and status distribution.</p>
+        <h2>{{ t('dashboard.title') }}</h2>
+        <p>{{ t('dashboard.subtitle') }}</p>
       </div>
     </section>
 
@@ -200,8 +203,8 @@ onMounted(async () => {
         <el-card class="panel appointments-panel" shadow="never">
           <template #header>
             <div class="panel-header">
-              <h3>Today Schedule</h3>
-              <el-button type="primary" link @click="router.push('/appointments')">View all</el-button>
+              <h3>{{ t('dashboard.todaySchedule') }}</h3>
+              <el-button type="primary" link @click="router.push('/appointments')">{{ t('common.viewAll') }}</el-button>
             </div>
           </template>
           <ul v-if="todaySchedule.length > 0">
@@ -210,15 +213,15 @@ onMounted(async () => {
                 <strong>{{ item.patient_name }}</strong>
                 <span>{{ item.doctor_name }} · {{ item.appointment_time.slice(0, 5) }}</span>
               </div>
-              <el-tag :type="statusTagType(item.status)" size="small">{{ item.status }}</el-tag>
+              <el-tag :type="statusTagType(item.status)" size="small">{{ t(`status.${item.status}`) }}</el-tag>
             </li>
           </ul>
-          <el-empty v-else description="No upcoming appointments." :image-size="80" />
+          <el-empty v-else :description="t('dashboard.noUpcoming')" :image-size="80" />
         </el-card>
 
         <el-card class="panel side-panel" shadow="never">
           <section>
-            <h3>Today Status Distribution</h3>
+            <h3>{{ t('dashboard.statusDistribution') }}</h3>
             <div class="status-pie-wrap">
               <div class="status-pie" :style="statusPieStyle"></div>
               <div class="status-legend">
@@ -232,7 +235,7 @@ onMounted(async () => {
           </section>
 
           <section>
-            <h3>Quick Actions</h3>
+            <h3>{{ t('dashboard.quickActions') }}</h3>
             <div class="quick-actions">
               <button
                 v-for="action in quickActions"
@@ -249,7 +252,7 @@ onMounted(async () => {
                 <span class="quick-action-note">{{ action.note }}</span>
               </button>
             </div>
-            <p class="pending-tip">{{ pendingCount }} appointments are waiting for confirmation today.</p>
+            <p class="pending-tip">{{ t('dashboard.waitingForConfirmation', { count: pendingCount }) }}</p>
           </section>
         </el-card>
       </section>

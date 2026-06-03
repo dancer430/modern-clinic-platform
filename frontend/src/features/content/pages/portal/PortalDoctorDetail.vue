@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { portalDoctorsApi } from '../../api/doctor-profiles'
 import type { DoctorPortalDetail } from '../../types'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const doctor = ref<DoctorPortalDetail | null>(null)
@@ -15,7 +17,7 @@ const load = async () => {
   try {
     doctor.value = await portalDoctorsApi.detail(Number(route.params.userId))
     if (doctor.value?.name) {
-      document.title = `${doctor.value.name} – Doctors`
+      document.title = t('portal.doctorDetail.documentTitle', { name: doctor.value.name })
     }
   } catch (e) {
     error.value = (e as Error).message
@@ -29,7 +31,7 @@ onMounted(load)
 
 <template>
   <main class="portal-page" v-if="!loading && doctor">
-    <button class="back" @click="router.push('/portal/doctors')">← All doctors</button>
+    <button class="back" @click="router.push('/portal/doctors')">{{ t('portal.doctorDetail.backToAll') }}</button>
     <header class="portal-page__hero">
       <div class="portal-page__avatar">
         <img v-if="doctor.cover_image_url" :src="doctor.cover_image_url" :alt="doctor.name" />
@@ -45,7 +47,7 @@ onMounted(load)
     </header>
     <article class="portal-page__body" v-html="doctor.bio_published_html" />
   </main>
-  <div v-else-if="loading" class="portal-page__loading">Loading…</div>
+  <div v-else-if="loading" class="portal-page__loading">{{ t('portal.loading') }}</div>
   <div v-else-if="error" class="portal-page__error">{{ error }}</div>
 </template>
 

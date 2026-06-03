@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 defineProps<{
   modelValue: boolean
   confirmInfo: string
@@ -15,12 +19,12 @@ const emit = defineEmits<{
 <template>
   <ElDialog
     :model-value="modelValue"
-    title="Confirm Appointment"
+    :title="t('appointments.confirmTitle')"
     width="520px"
     @update:model-value="(value) => emit('update:modelValue', value)"
   >
     <p style="margin-bottom: 12px; color: var(--el-text-color-secondary);">
-      Record preliminary diagnosis as Confirm Info (max 500 chars).
+      {{ t('appointments.confirmInfoHint') }}
     </p>
     <ElInput
       :model-value="confirmInfo"
@@ -28,17 +32,17 @@ const emit = defineEmits<{
       :rows="4"
       maxlength="500"
       show-word-limit
-      placeholder="Enter preliminary diagnosis..."
+      :placeholder="t('appointments.confirmInfoPlaceholder')"
       @update:model-value="(value) => emit('update:confirmInfo', value || '')"
     />
     <template #footer>
-      <ElButton @click="emit('update:modelValue', false)">Cancel</ElButton>
+      <ElButton @click="emit('update:modelValue', false)">{{ t('common.cancel') }}</ElButton>
       <ElButton
         type="primary"
         :disabled="!confirmInfo.trim() || confirmInfoTooLong"
         @click="emit('submit')"
       >
-        Submit Confirm
+        {{ t('appointments.submitConfirm') }}
       </ElButton>
     </template>
   </ElDialog>

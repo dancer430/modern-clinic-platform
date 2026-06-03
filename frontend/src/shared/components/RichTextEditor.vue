@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IDomEditor, IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
 import '@wangeditor/editor/dist/css/style.css'
@@ -14,6 +15,8 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
+
+const { t } = useI18n()
 
 const editorRef = shallowRef<IDomEditor | null>(null)
 const html = ref<string>(props.modelValue ?? '')
@@ -40,7 +43,7 @@ const toolbarConfig: Partial<IToolbarConfig> = {
 }
 
 const editorConfig: Partial<IEditorConfig> = {
-  placeholder: props.placeholder ?? 'Write something…',
+  placeholder: props.placeholder ?? t('editor.placeholder'),
   MENU_CONF: {
     uploadImage: {
       async customUpload(file: File, insertFn: (url: string) => void) {

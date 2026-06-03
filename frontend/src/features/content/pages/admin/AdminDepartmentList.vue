@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElButton, ElMessage, ElMessageBox, ElTable, ElTableColumn, ElTag } from 'element-plus'
 import { adminDepartmentsApi } from '../../api/departments'
 import type { DepartmentCard } from '../../types'
 
+const { t } = useI18n()
 const router = useRouter()
 const items = ref<DepartmentCard[]>([])
 const loading = ref(false)
@@ -19,9 +21,9 @@ const load = async () => {
 }
 
 const removeDept = async (id: number) => {
-  await ElMessageBox.confirm('Delete this department?', 'Confirm', { type: 'warning' })
+  await ElMessageBox.confirm(t('admin.deleteDepartmentConfirm'), t('common.confirm'), { type: 'warning' })
   await adminDepartmentsApi.remove(id)
-  ElMessage.success('Deleted')
+  ElMessage.success(t('admin.deleted'))
   await load()
 }
 
@@ -31,25 +33,25 @@ onMounted(load)
 <template>
   <section class="admin-page">
     <header class="admin-page__header">
-      <h1>Departments</h1>
-      <ElButton type="primary" @click="router.push('/admin/departments/new')">New department</ElButton>
+      <h1>{{ t('admin.departments') }}</h1>
+      <ElButton type="primary" @click="router.push('/admin/departments/new')">{{ t('admin.newDepartment') }}</ElButton>
     </header>
     <ElTable v-loading="loading" :data="items">
-      <ElTableColumn prop="name" label="Name" />
-      <ElTableColumn prop="slug" label="Slug" />
-      <ElTableColumn prop="summary" label="Summary" />
-      <ElTableColumn prop="display_order" label="Order" width="100" />
-      <ElTableColumn label="Status" width="120">
+      <ElTableColumn prop="name" :label="t('admin.name')" />
+      <ElTableColumn prop="slug" :label="t('admin.slug')" />
+      <ElTableColumn prop="summary" :label="t('admin.summary')" />
+      <ElTableColumn prop="display_order" :label="t('admin.order')" width="100" />
+      <ElTableColumn :label="t('admin.status')" width="120">
         <template #default="{ row }">
           <ElTag :type="row.is_published ? 'success' : 'info'">
-            {{ row.is_published ? 'Published' : 'Draft' }}
+            {{ row.is_published ? t('admin.published') : t('admin.draft') }}
           </ElTag>
         </template>
       </ElTableColumn>
-      <ElTableColumn label="Actions" width="200">
+      <ElTableColumn :label="t('common.actions')" width="200">
         <template #default="{ row }">
-          <ElButton size="small" @click="router.push(`/admin/departments/${row.id}`)">Edit</ElButton>
-          <ElButton size="small" type="danger" @click="removeDept(row.id)">Delete</ElButton>
+          <ElButton size="small" @click="router.push(`/admin/departments/${row.id}`)">{{ t('common.edit') }}</ElButton>
+          <ElButton size="small" type="danger" @click="removeDept(row.id)">{{ t('common.delete') }}</ElButton>
         </template>
       </ElTableColumn>
     </ElTable>

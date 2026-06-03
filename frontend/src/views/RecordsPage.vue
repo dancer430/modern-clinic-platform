@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import httpClient from '@/shared/http'
+
+const { t } = useI18n()
 
 interface RecordViewItem {
   id: number
@@ -97,7 +100,7 @@ const fetchCompletedRecords = async () => {
     records.value = data.results
     totalCount.value = data.count
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to load medical records')
+    ElMessage.error(error.response?.data?.detail || t('records.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -156,8 +159,8 @@ onMounted(async () => {
   <div class="page" v-loading="loading">
     <section class="toolbar">
       <div>
-        <h2>Medical Records</h2>
-        <p>Showing completed appointments as record thumbnails. Click to view details.</p>
+        <h2>{{ t('records.title') }}</h2>
+        <p>{{ t('records.subtitle') }}</p>
       </div>
     </section>
 
@@ -167,14 +170,14 @@ onMounted(async () => {
         type="daterange"
         unlink-panels
         range-separator="—"
-        start-placeholder="Start date"
-        end-placeholder="End date"
+        :start-placeholder="t('records.startDate')"
+        :end-placeholder="t('records.endDate')"
         value-format="YYYY-MM-DD"
         class="filter-control filter-date-range"
       />
       <el-select
         v-model="selectedPatientId"
-        placeholder="All patients"
+        :placeholder="t('records.allPatients')"
         clearable
         class="filter-control"
       >
@@ -187,7 +190,7 @@ onMounted(async () => {
       </el-select>
       <el-select
         v-model="selectedDoctorId"
-        placeholder="All doctors"
+        :placeholder="t('records.allDoctors')"
         clearable
         class="filter-control"
       >
@@ -199,8 +202,8 @@ onMounted(async () => {
         />
       </el-select>
       <div class="filter-actions">
-        <el-button type="primary" class="filter-apply" @click="applyFilters">Apply</el-button>
-        <el-button class="filter-reset" :disabled="!hasActiveFilters" @click="resetFilters">Reset</el-button>
+        <el-button type="primary" class="filter-apply" @click="applyFilters">{{ t('records.apply') }}</el-button>
+        <el-button class="filter-reset" :disabled="!hasActiveFilters" @click="resetFilters">{{ t('common.reset') }}</el-button>
       </div>
     </section>
 
@@ -218,18 +221,18 @@ onMounted(async () => {
         <template #header>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin: 0;">{{ item.patient_name }}</h3>
-            <el-tag type="success" size="small">completed</el-tag>
+            <el-tag type="success" size="small">{{ t('status.completed') }}</el-tag>
           </div>
         </template>
-        <p><strong>Doctor:</strong> {{ item.doctor_name }}</p>
-        <p><strong>Visit:</strong> {{ item.appointment_date }} &middot; {{ item.appointment_time.slice(0, 5) }}</p>
-        <p class="record-clip"><strong>Diagnosis:</strong> {{ item.diagnosis_result || '-' }}</p>
+        <p><strong>{{ t('records.cardDoctor') }}</strong> {{ item.doctor_name }}</p>
+        <p><strong>{{ t('records.cardVisit') }}</strong> {{ item.appointment_date }} &middot; {{ item.appointment_time.slice(0, 5) }}</p>
+        <p class="record-clip"><strong>{{ t('records.cardDiagnosis') }}</strong> {{ item.diagnosis_result || '-' }}</p>
       </el-card>
 
       <el-empty
         v-if="!loading && recordsSorted.length === 0"
         class="cards-grid-empty"
-        description="No completed records available for current user scope."
+        :description="t('records.empty')"
       />
     </section>
 
@@ -247,24 +250,24 @@ onMounted(async () => {
 
     <el-dialog
       v-model="showDetailDialog"
-      title="Medical Record Detail"
+      :title="t('records.detailTitle')"
       width="680px"
       destroy-on-close
       class="record-detail-dialog"
     >
       <el-descriptions v-if="selectedRecord" :column="2" border>
-        <el-descriptions-item label="Patient">{{ selectedRecord.patient_name }}</el-descriptions-item>
-        <el-descriptions-item label="Doctor">{{ selectedRecord.doctor_name }}</el-descriptions-item>
-        <el-descriptions-item label="Visit Date">{{ selectedRecord.appointment_date }}</el-descriptions-item>
-        <el-descriptions-item label="Visit Time">{{ selectedRecord.appointment_time.slice(0, 5) }}</el-descriptions-item>
-        <el-descriptions-item label="Chief Reason" :span="2">{{ selectedRecord.reason || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="Confirm Info" :span="2">{{ selectedRecord.confirm_info || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="Diagnosis Result" :span="2">{{ selectedRecord.diagnosis_result || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="Treatment Plan" :span="2">{{ selectedRecord.treatment_plan || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="Medical Advice" :span="2">{{ selectedRecord.medical_advice || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('records.detailPatient')">{{ selectedRecord.patient_name }}</el-descriptions-item>
+        <el-descriptions-item :label="t('records.detailDoctor')">{{ selectedRecord.doctor_name }}</el-descriptions-item>
+        <el-descriptions-item :label="t('records.detailVisitDate')">{{ selectedRecord.appointment_date }}</el-descriptions-item>
+        <el-descriptions-item :label="t('records.detailVisitTime')">{{ selectedRecord.appointment_time.slice(0, 5) }}</el-descriptions-item>
+        <el-descriptions-item :label="t('records.detailChiefReason')" :span="2">{{ selectedRecord.reason || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('records.detailConfirmInfo')" :span="2">{{ selectedRecord.confirm_info || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('records.detailDiagnosisResult')" :span="2">{{ selectedRecord.diagnosis_result || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('records.detailTreatmentPlan')" :span="2">{{ selectedRecord.treatment_plan || '-' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('records.detailMedicalAdvice')" :span="2">{{ selectedRecord.medical_advice || '-' }}</el-descriptions-item>
       </el-descriptions>
       <template #footer>
-        <el-button @click="showDetailDialog = false">Close</el-button>
+        <el-button @click="showDetailDialog = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
   </div>

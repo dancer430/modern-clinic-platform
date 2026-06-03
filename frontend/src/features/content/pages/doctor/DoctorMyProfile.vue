@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElAlert, ElButton, ElForm, ElFormItem, ElInput, ElMessage } from 'element-plus'
 import RichTextEditor from '@/shared/components/RichTextEditor.vue'
 import PublishStatusBadge from '../../components/PublishStatusBadge.vue'
@@ -8,6 +9,7 @@ import { useDraftReview } from '../../composables/useDraftReview'
 import { useAuthStore } from '@/features/auth'
 import type { DoctorProfileSelf } from '../../types'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const profile = ref<DoctorProfileSelf | null>(null)
 const saving = ref(false)
@@ -17,7 +19,7 @@ const activeTab = ref<'draft' | 'published'>('draft')
 const { isLocked, canSubmit, wasRejected, wasApproved } = useDraftReview(profile)
 
 const displayName = computed(
-  () => authStore.user?.name || authStore.user?.username || 'Doctor',
+  () => authStore.user?.name || authStore.user?.username || t('profileEditor.defaultDoctorName'),
 )
 const initial = computed(() => displayName.value.charAt(0).toUpperCase())
 
@@ -34,12 +36,12 @@ const save = async () => {
       specialty: profile.value.specialty,
       bio_draft_html: profile.value.bio_draft_html,
     })
-    ElMessage.success('Saved')
+    ElMessage.success(t('profileEditor.saved'))
   } catch (e: unknown) {
     const msg =
       (e as { response?: { status?: number } }).response?.status === 409
-        ? 'Editing is locked while review is pending.'
-        : 'Save failed'
+        ? t('profileEditor.editingLocked')
+        : t('profileEditor.saveFailed')
     ElMessage.error(msg)
   } finally {
     saving.value = false
@@ -50,9 +52,9 @@ const submitForReview = async () => {
   submitting.value = true
   try {
     profile.value = await doctorSelfApi.submitReview()
-    ElMessage.success('Submitted for review')
+    ElMessage.success(t('profileEditor.submitted'))
   } catch {
-    ElMessage.error('Submit failed')
+    ElMessage.error(t('profileEditor.submitFailed'))
   } finally {
     submitting.value = false
   }
@@ -74,7 +76,7 @@ onMounted(load)
           <template v-else>{{ initial }}</template>
         </span>
         <div class="my-profile__title-block">
-          <h1>My public profile</h1>
+          <h1>{{ t('profileEditor.heading') }}</h1>
           <p class="my-profile__subtitle">{{ displayName }}</p>
         </div>
         <PublishStatusBadge
@@ -90,7 +92,7 @@ onMounted(load)
           type="primary"
           @click="save"
         >
-          Save draft
+          {{ t('profileEditor.saveDraft') }}
         </ElButton>
         <ElButton
           :disabled="!canSubmit"
@@ -98,7 +100,7 @@ onMounted(load)
           type="success"
           @click="submitForReview"
         >
-          Submit for review
+          {{ t('profileEditor.submitForReview') }}
         </ElButton>
       </div>
     </header>
@@ -111,7 +113,7 @@ onMounted(load)
         :class="{ active: activeTab === 'draft' }"
         @click="activeTab = 'draft'"
       >
-        Draft <span class="tab-hint">(editing)</span>
+        {{ t('profileEditor.tabDraft') }} <span class="tab-hint">{{ t('profileEditor.tabDraftHint') }}</span>
       </button>
       <button
         type="button"
@@ -120,7 +122,7 @@ onMounted(load)
         :class="{ active: activeTab === 'published' }"
         @click="activeTab = 'published'"
       >
-        Published <span class="tab-hint">(read-only)</span>
+        {{ t('profileEditor.tabPublished') }} <span class="tab-hint">{{ t('profileEditor.tabPublishedHint') }}</span>
       </button>
     </nav>
 
@@ -129,48 +131,48 @@ onMounted(load)
       type="warning"
       :closable="false"
       class="status-note"
-      title="Awaiting review"
+      :title="t('profileEditor.awaitingReviewTitle')"
     >
-      Your draft is waiting for admin approval. Editing is locked until it is approved or rejected.
+      {{ t('profileEditor.awaitingReviewBody') }}
     </ElAlert>
     <ElAlert
       v-else-if="wasRejected"
       type="error"
       :closable="false"
       class="status-note"
-      title="Last submission rejected"
+      :title="t('profileEditor.rejectedTitle')"
     >
-      {{ profile.draft_review_note || '(no reason provided)' }}
+      {{ profile.draft_review_note || t('profileEditor.noReasonProvided') }}
     </ElAlert>
     <ElAlert
       v-else-if="wasApproved"
       type="success"
       :closable="false"
       class="status-note"
-      title="Latest version is live"
+      :title="t('profileEditor.approvedTitle')"
     >
-      Editing now will mark this as a new draft.
+      {{ t('profileEditor.approvedBody') }}
     </ElAlert>
 
     <div v-show="activeTab === 'draft'" class="my-profile__panel">
       <ElForm label-position="top" class="my-profile__form">
         <div class="my-profile__row">
-          <ElFormItem label="Title" class="my-profile__field">
+          <ElFormItem :label="t('profileEditor.fieldTitle')" class="my-profile__field">
             <ElInput
               v-model="profile.title"
               :disabled="isLocked"
-              placeholder="e.g. Senior Consultant"
+              :placeholder="t('profileEditor.fieldTitlePlaceholder')"
             />
           </ElFormItem>
-          <ElFormItem label="Specialty" class="my-profile__field">
+          <ElFormItem :label="t('profileEditor.fieldSpecialty')" class="my-profile__field">
             <ElInput
               v-model="profile.specialty"
               :disabled="isLocked"
-              placeholder="e.g. Cardiology"
+              :placeholder="t('profileEditor.fieldSpecialtyPlaceholder')"
             />
           </ElFormItem>
         </div>
-        <ElFormItem label="Bio">
+        <ElFormItem :label="t('profileEditor.fieldBio')">
           <RichTextEditor v-model="profile.bio_draft_html" :disabled="isLocked" />
         </ElFormItem>
       </ElForm>
@@ -180,15 +182,15 @@ onMounted(load)
       <div class="my-profile__published-grid">
         <div class="my-profile__published-meta">
           <div>
-            <label>Title</label>
+            <label>{{ t('profileEditor.fieldTitle') }}</label>
             <p>{{ profile.title || '—' }}</p>
           </div>
           <div>
-            <label>Specialty</label>
+            <label>{{ t('profileEditor.fieldSpecialty') }}</label>
             <p>{{ profile.specialty || '—' }}</p>
           </div>
           <div v-if="profile.departments?.length">
-            <label>Departments</label>
+            <label>{{ t('profileEditor.fieldDepartments') }}</label>
             <p>
               <span
                 v-for="d in profile.departments"
@@ -202,14 +204,14 @@ onMounted(load)
           </div>
         </div>
         <div class="my-profile__published-bio">
-          <label>Currently published bio</label>
+          <label>{{ t('profileEditor.publishedBioLabel') }}</label>
           <div
             v-if="profile.bio_published_html"
             class="published-html"
             v-html="profile.bio_published_html"
           />
           <div v-else class="published-empty">
-            Nothing published yet. Save a draft and submit for review to publish.
+            {{ t('profileEditor.publishedEmpty') }}
           </div>
         </div>
       </div>

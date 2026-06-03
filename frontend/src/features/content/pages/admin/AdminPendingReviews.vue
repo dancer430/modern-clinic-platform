@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElButton, ElMessage, ElMessageBox, ElTable, ElTableColumn } from 'element-plus'
 import { adminDoctorProfilesApi } from '../../api/doctor-profiles'
 import type { DoctorProfileAdmin } from '../../types'
 
+const { t } = useI18n()
 const items = ref<DoctorProfileAdmin[]>([])
 const loading = ref(false)
 
@@ -18,18 +20,18 @@ const load = async () => {
 
 const approve = async (userId: number) => {
   await adminDoctorProfilesApi.approve(userId)
-  ElMessage.success('Approved')
+  ElMessage.success(t('admin.approved'))
   await load()
 }
 
 const reject = async (userId: number) => {
-  const result = await ElMessageBox.prompt('Reason for rejection', 'Reject', {
+  const result = await ElMessageBox.prompt(t('admin.reasonForRejection'), t('admin.reject'), {
     inputValidator: (v) => Boolean(v && v.trim().length),
-    inputErrorMessage: 'reason is required',
+    inputErrorMessage: t('admin.reasonRequired'),
   })
   const { value } = result as { value: string; action: string }
   await adminDoctorProfilesApi.reject(userId, value)
-  ElMessage.success('Rejected')
+  ElMessage.success(t('admin.rejected'))
   await load()
 }
 
@@ -38,19 +40,19 @@ onMounted(load)
 
 <template>
   <section class="admin-page">
-    <header class="admin-page__header"><h1>Pending reviews</h1></header>
+    <header class="admin-page__header"><h1>{{ t('admin.pendingReviews') }}</h1></header>
     <ElTable v-loading="loading" :data="items">
-      <ElTableColumn prop="name" label="Doctor" />
-      <ElTableColumn label="Draft preview">
+      <ElTableColumn prop="name" :label="t('admin.doctor')" />
+      <ElTableColumn :label="t('admin.draftPreview')">
         <template #default="{ row }">
           <div class="draft-preview" v-html="row.bio_draft_html" />
         </template>
       </ElTableColumn>
-      <ElTableColumn prop="draft_submitted_at" label="Submitted" width="200" />
-      <ElTableColumn label="Actions" width="220">
+      <ElTableColumn prop="draft_submitted_at" :label="t('admin.submitted')" width="200" />
+      <ElTableColumn :label="t('common.actions')" width="220">
         <template #default="{ row }">
-          <ElButton size="small" type="success" @click="approve(row.user_id)">Approve</ElButton>
-          <ElButton size="small" type="danger" @click="reject(row.user_id)">Reject</ElButton>
+          <ElButton size="small" type="success" @click="approve(row.user_id)">{{ t('admin.approve') }}</ElButton>
+          <ElButton size="small" type="danger" @click="reject(row.user_id)">{{ t('admin.reject') }}</ElButton>
         </template>
       </ElTableColumn>
     </ElTable>

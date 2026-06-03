@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import httpClient from '@/shared/http'
 import { useAuthStore } from '@/features/auth'
+
+const { t } = useI18n()
 
 interface PatientUser {
   id: number
@@ -37,8 +40,8 @@ const form = reactive({
 })
 
 const formRules = reactive<FormRules>({
-  username: [{ required: true, message: 'Username is required', trigger: 'blur' }],
-  name: [{ required: true, message: 'Name is required', trigger: 'blur' }],
+  username: [{ required: true, message: () => t('patients.usernameRequired'), trigger: 'blur' }],
+  name: [{ required: true, message: () => t('patients.nameRequired'), trigger: 'blur' }],
 })
 
 const canManage = computed(() => authStore.isAdmin)
@@ -70,7 +73,7 @@ const loadPageData = async () => {
   try {
     await fetchPatients()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to load patients')
+    ElMessage.error(error.response?.data?.detail || t('patients.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -146,10 +149,10 @@ const savePatient = async () => {
       await httpClient.post('/api/auth/patients/', payload)
     }
     showDialog.value = false
-    ElMessage.success(editingId.value ? 'Patient updated' : 'Patient created')
+    ElMessage.success(editingId.value ? t('patients.updated') : t('patients.created'))
     await fetchPatients()
   } catch (error: any) {
-    ElMessage.error(extractErrorMessage(error, 'Save patient failed'))
+    ElMessage.error(extractErrorMessage(error, t('patients.saveFailed')))
   }
 }
 
@@ -171,10 +174,10 @@ const removePatient = async () => {
     await httpClient.delete(`/api/auth/patients/${deleteTarget.value.id}/`)
     showDeleteDialog.value = false
     deleteTarget.value = null
-    ElMessage.success('Patient deleted')
+    ElMessage.success(t('patients.deleted'))
     await fetchPatients()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Delete patient failed')
+    ElMessage.error(error.response?.data?.detail || t('patients.deleteFailed'))
   }
 }
 
@@ -187,11 +190,11 @@ onMounted(async () => {
   <div class="page">
     <section class="toolbar">
       <div>
-        <h2>Patients</h2>
-        <p>{{ filteredPatients.length }} patient accounts</p>
+        <h2>{{ t('patients.title') }}</h2>
+        <p>{{ t('patients.countSummary', { count: filteredPatients.length }) }}</p>
       </div>
       <ElButton type="primary" :disabled="!canCreatePatient" @click="openCreate">
-        + Add Patient
+        {{ t('patients.addPatient') }}
       </ElButton>
     </section>
 
@@ -202,20 +205,20 @@ onMounted(async () => {
       show-icon
       style="margin-bottom: 16px;"
     >
-      Admin can create, edit, and delete patient accounts. Doctors can create patient accounts.
+      {{ t('patients.permissionNotice') }}
     </ElAlert>
 
     <section class="filters filters-inline">
       <ElInput
         v-model="search"
-        placeholder="Search by name, email or phone"
+        :placeholder="t('patients.searchPlaceholder')"
         clearable
         style="width: 320px;"
       />
       <ElSelect v-model="statusFilter" style="width: 160px;">
-        <ElOption label="All status" value="all" />
-        <ElOption label="Active" value="active" />
-        <ElOption label="Inactive" value="inactive" />
+        <ElOption :label="t('patients.allStatus')" value="all" />
+        <ElOption :label="t('patients.statusActive')" value="active" />
+        <ElOption :label="t('patients.statusInactive')" value="inactive" />
       </ElSelect>
     </section>
 
@@ -225,38 +228,38 @@ onMounted(async () => {
         :data="filteredPatients"
         style="width: 100%;"
       >
-        <ElTableColumn prop="name" label="Name">
+        <ElTableColumn prop="name" :label="t('patients.columnName')">
           <template #default="{ row }">
             {{ displayName(row) }}
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="email" label="Email">
+        <ElTableColumn prop="email" :label="t('patients.columnEmail')">
           <template #default="{ row }">
             {{ row.email || '-' }}
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="phone" label="Phone">
+        <ElTableColumn prop="phone" :label="t('patients.columnPhone')">
           <template #default="{ row }">
             {{ row.phone || '-' }}
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="is_active" label="Status" width="120">
+        <ElTableColumn prop="is_active" :label="t('patients.columnStatus')" width="120">
           <template #default="{ row }">
             <ElTag :type="row.is_active ? 'success' : 'danger'" size="small">
-              {{ row.is_active ? 'active' : 'inactive' }}
+              {{ row.is_active ? t('patients.tagActive') : t('patients.tagInactive') }}
             </ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn label="Actions" width="180">
+        <ElTableColumn :label="t('common.actions')" width="180">
           <template #default="{ row }">
-            <ElButton text :disabled="!canManage" @click="openEdit(row)">Edit</ElButton>
+            <ElButton text :disabled="!canManage" @click="openEdit(row)">{{ t('common.edit') }}</ElButton>
             <ElButton text type="danger" :disabled="!canManage" @click="requestRemovePatient(row)">
-              Delete
+              {{ t('common.delete') }}
             </ElButton>
           </template>
         </ElTableColumn>
         <template #empty>
-          <ElEmpty description="No patients found" />
+          <ElEmpty :description="t('patients.empty')" />
         </template>
       </ElTable>
     </section>
@@ -264,24 +267,23 @@ onMounted(async () => {
     <!-- Delete Confirmation Dialog -->
     <ElDialog
       v-model="showDeleteDialog"
-      title="Delete Patient Account"
+      :title="t('patients.deleteTitle')"
       width="460px"
       :before-close="closeDeleteDialog"
     >
       <p>
-        You are about to delete <strong>{{ deleteTarget ? displayName(deleteTarget) : '-' }}</strong>.
-        This action cannot be undone.
+        {{ t('patients.deleteConfirmPrefix') }} <strong>{{ deleteTarget ? displayName(deleteTarget) : '-' }}</strong>{{ t('patients.deleteConfirmSuffix') }}
       </p>
       <template #footer>
-        <ElButton @click="closeDeleteDialog">Keep Account</ElButton>
-        <ElButton type="danger" @click="removePatient">Delete Permanently</ElButton>
+        <ElButton @click="closeDeleteDialog">{{ t('patients.keepAccount') }}</ElButton>
+        <ElButton type="danger" @click="removePatient">{{ t('patients.deletePermanently') }}</ElButton>
       </template>
     </ElDialog>
 
     <!-- Create / Edit Dialog -->
     <ElDialog
       v-model="showDialog"
-      :title="editingId ? 'Edit Patient' : 'Add Patient'"
+      :title="editingId ? t('patients.editTitle') : t('patients.addTitle')"
       width="560px"
       :before-close="closeDialog"
     >
@@ -291,30 +293,30 @@ onMounted(async () => {
         :rules="formRules"
         label-position="top"
       >
-        <ElFormItem label="Username" prop="username">
-          <ElInput v-model="form.username" placeholder="Username" />
+        <ElFormItem :label="t('patients.fieldUsername')" prop="username">
+          <ElInput v-model="form.username" :placeholder="t('patients.placeholderUsername')" />
         </ElFormItem>
-        <ElFormItem label="Name" prop="name">
-          <ElInput v-model="form.name" placeholder="Name" />
+        <ElFormItem :label="t('patients.fieldName')" prop="name">
+          <ElInput v-model="form.name" :placeholder="t('patients.placeholderName')" />
         </ElFormItem>
-        <ElFormItem label="Email" prop="email">
-          <ElInput v-model="form.email" placeholder="Email" />
+        <ElFormItem :label="t('patients.fieldEmail')" prop="email">
+          <ElInput v-model="form.email" :placeholder="t('patients.placeholderEmail')" />
         </ElFormItem>
-        <ElFormItem label="Phone" prop="phone">
-          <ElInput v-model="form.phone" placeholder="Phone" />
+        <ElFormItem :label="t('patients.fieldPhone')" prop="phone">
+          <ElInput v-model="form.phone" :placeholder="t('patients.placeholderPhone')" />
         </ElFormItem>
-        <ElFormItem label="Password" prop="password">
+        <ElFormItem :label="t('patients.fieldPassword')" prop="password">
           <ElInput
             v-model="form.password"
             type="password"
             show-password
-            :placeholder="editingId ? 'Reset password (optional)' : 'Initial password (optional)'"
+            :placeholder="editingId ? t('patients.placeholderResetPassword') : t('patients.placeholderInitialPassword')"
           />
         </ElFormItem>
       </ElForm>
       <template #footer>
-        <ElButton @click="closeDialog">Cancel</ElButton>
-        <ElButton type="primary" @click="savePatient">Save</ElButton>
+        <ElButton @click="closeDialog">{{ t('common.cancel') }}</ElButton>
+        <ElButton type="primary" @click="savePatient">{{ t('common.save') }}</ElButton>
       </template>
     </ElDialog>
   </div>

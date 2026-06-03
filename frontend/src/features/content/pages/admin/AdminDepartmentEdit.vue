@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElButton, ElForm, ElFormItem, ElInput, ElInputNumber, ElMessage, ElSwitch, ElUpload } from 'element-plus'
 import type { UploadRawFile } from 'element-plus'
 import RichTextEditor from '@/shared/components/RichTextEditor.vue'
@@ -8,6 +9,7 @@ import { adminDepartmentsApi } from '../../api/departments'
 import { uploadMedia } from '../../api/media-upload'
 import type { DepartmentAdminInput } from '../../types'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const isNew = computed(() => route.params.id === 'new')
@@ -28,7 +30,7 @@ const load = async () => {
 const handleCoverUpload = async (raw: UploadRawFile) => {
   const url = await uploadMedia(raw as File)
   form.cover_image_url = url
-  ElMessage.success('Uploaded')
+  ElMessage.success(t('admin.uploaded'))
   return false
 }
 
@@ -37,11 +39,11 @@ const save = async () => {
   try {
     if (isNew.value) {
       const created = await adminDepartmentsApi.create(form)
-      ElMessage.success('Created')
+      ElMessage.success(t('admin.created'))
       router.replace(`/admin/departments/${created.id}`)
     } else if (id.value != null) {
       await adminDepartmentsApi.update(id.value, form)
-      ElMessage.success('Saved')
+      ElMessage.success(t('admin.saved'))
     }
   } finally {
     saving.value = false
@@ -54,26 +56,26 @@ onMounted(load)
 <template>
   <section class="admin-page">
     <header class="admin-page__header">
-      <h1>{{ isNew ? 'New department' : 'Edit department' }}</h1>
-      <ElButton @click="router.push('/admin/departments')">Back</ElButton>
+      <h1>{{ isNew ? t('admin.newDepartment') : t('admin.editDepartment') }}</h1>
+      <ElButton @click="router.push('/admin/departments')">{{ t('common.back') }}</ElButton>
     </header>
     <ElForm :model="form" label-position="top" class="admin-form">
-      <ElFormItem label="Name"><ElInput v-model="form.name" /></ElFormItem>
-      <ElFormItem label="Slug"><ElInput v-model="form.slug" /></ElFormItem>
-      <ElFormItem label="Summary"><ElInput v-model="form.summary" /></ElFormItem>
-      <ElFormItem label="Description">
+      <ElFormItem :label="t('admin.name')"><ElInput v-model="form.name" /></ElFormItem>
+      <ElFormItem :label="t('admin.slug')"><ElInput v-model="form.slug" /></ElFormItem>
+      <ElFormItem :label="t('admin.summary')"><ElInput v-model="form.summary" /></ElFormItem>
+      <ElFormItem :label="t('admin.description')">
         <RichTextEditor v-model="form.description_html" />
       </ElFormItem>
-      <ElFormItem label="Display order"><ElInputNumber v-model="form.display_order" :min="0" /></ElFormItem>
-      <ElFormItem label="Published"><ElSwitch v-model="form.is_published" /></ElFormItem>
-      <ElFormItem label="Cover image">
+      <ElFormItem :label="t('admin.displayOrder')"><ElInputNumber v-model="form.display_order" :min="0" /></ElFormItem>
+      <ElFormItem :label="t('admin.published')"><ElSwitch v-model="form.is_published" /></ElFormItem>
+      <ElFormItem :label="t('admin.coverImage')">
         <ElUpload :before-upload="handleCoverUpload" :show-file-list="false" accept="image/*">
-          <ElButton>Upload cover</ElButton>
+          <ElButton>{{ t('admin.uploadCover') }}</ElButton>
         </ElUpload>
         <img v-if="form.cover_image_url" :src="form.cover_image_url" class="admin-form__cover" />
       </ElFormItem>
       <div class="admin-form__actions">
-        <ElButton type="primary" :loading="saving" @click="save">Save</ElButton>
+        <ElButton type="primary" :loading="saving" @click="save">{{ t('common.save') }}</ElButton>
       </div>
     </ElForm>
   </section>

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElButton, ElTable, ElTableColumn } from 'element-plus'
 import PublishStatusBadge from '../../components/PublishStatusBadge.vue'
 import { adminDoctorProfilesApi } from '../../api/doctor-profiles'
 import type { DoctorProfileAdmin } from '../../types'
 
+const { t } = useI18n()
 const router = useRouter()
 const items = ref<DoctorProfileAdmin[]>([])
 const loading = ref(false)
@@ -25,25 +27,25 @@ onMounted(load)
 <template>
   <section class="admin-page">
     <header class="admin-page__header">
-      <h1>Doctor profiles</h1>
+      <h1>{{ t('admin.doctorProfiles') }}</h1>
     </header>
     <ElTable v-loading="loading" :data="items">
-      <ElTableColumn prop="name" label="Name" />
-      <ElTableColumn prop="title" label="Title" />
-      <ElTableColumn prop="specialty" label="Specialty" />
-      <ElTableColumn label="Departments">
+      <ElTableColumn prop="name" :label="t('admin.name')" />
+      <ElTableColumn prop="title" :label="t('admin.title')" />
+      <ElTableColumn prop="specialty" :label="t('admin.specialty')" />
+      <ElTableColumn :label="t('admin.departmentsColumn')">
         <template #default="{ row }">
           <span v-for="d in row.departments" :key="d.slug" class="dept-tag" :class="{ primary: d.is_primary }">{{ d.name }}</span>
         </template>
       </ElTableColumn>
-      <ElTableColumn label="Status" width="160">
+      <ElTableColumn :label="t('admin.status')" width="160">
         <template #default="{ row }">
           <PublishStatusBadge :status="row.draft_status" :published="row.is_published" />
         </template>
       </ElTableColumn>
-      <ElTableColumn label="Actions" width="120">
+      <ElTableColumn :label="t('common.actions')" width="120">
         <template #default="{ row }">
-          <ElButton size="small" @click="router.push(`/admin/doctor-profiles/${row.user_id}`)">Edit</ElButton>
+          <ElButton size="small" @click="router.push(`/admin/doctor-profiles/${row.user_id}`)">{{ t('common.edit') }}</ElButton>
         </template>
       </ElTableColumn>
     </ElTable>

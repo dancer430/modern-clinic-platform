@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/features/auth'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -8,6 +9,7 @@ import BrandLogo from '@/components/BrandLogo.vue'
 import DepartmentCarousel from '@/features/content/components/DepartmentCarousel.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const loading = ref(false)
 const formRef = ref<FormInstance>()
@@ -18,8 +20,8 @@ const form = reactive({
 })
 
 const rules = reactive<FormRules>({
-  account: [{ required: true, message: 'Please enter username or email', trigger: 'blur' }],
-  password: [{ required: true, message: 'Please enter password', trigger: 'blur' }],
+  account: [{ required: true, message: () => t('auth.pleaseEnterUsername'), trigger: 'blur' }],
+  password: [{ required: true, message: () => t('auth.pleaseEnterPassword'), trigger: 'blur' }],
 })
 
 const login = async () => {
@@ -39,7 +41,7 @@ const login = async () => {
     return
   }
 
-  ElMessage.error(result.error || 'Login failed')
+  ElMessage.error(result.error || t('auth.loginFailed'))
 }
 </script>
 
@@ -50,23 +52,23 @@ const login = async () => {
         <BrandLogo size="lg" />
       </div>
       <div class="login-hero">
-        <h1>Streamline Your Medical Practice</h1>
-        <p>Manage doctors, patients, and appointments all in one place.</p>
+        <h1>{{ t('auth.streamlineTitle') }}</h1>
+        <p>{{ t('auth.streamlineSubtitle') }}</p>
       </div>
 
       <div class="login-portal-preview">
         <DepartmentCarousel />
         <div class="login-portal-cta">
-          <ElButton class="cta-btn" @click="router.push('/portal/departments')">Browse departments</ElButton>
-          <ElButton class="cta-btn" @click="router.push('/portal/doctors')">Find a doctor</ElButton>
+          <ElButton class="cta-btn" @click="router.push('/portal/departments')">{{ t('auth.browseDepartments') }}</ElButton>
+          <ElButton class="cta-btn" @click="router.push('/portal/doctors')">{{ t('auth.findADoctor') }}</ElButton>
         </div>
       </div>
     </section>
 
     <section class="login-form-area">
       <div class="login-card">
-        <h2>Welcome back</h2>
-        <p>Sign in to your account to continue</p>
+        <h2>{{ t('auth.welcomeBack') }}</h2>
+        <p>{{ t('auth.signInToContinue') }}</p>
 
         <ElForm
           ref="formRef"
@@ -76,22 +78,22 @@ const login = async () => {
           class="login-form"
           @submit.prevent="login"
         >
-          <ElFormItem label="Username or Email" prop="account">
+          <ElFormItem :label="t('auth.usernameOrEmail')" prop="account">
             <ElInput
               v-model="form.account"
               size="large"
               autocomplete="username"
-              placeholder="Enter username or email"
+              :placeholder="t('auth.enterUsername')"
             />
           </ElFormItem>
 
-          <ElFormItem label="Password" prop="password">
+          <ElFormItem :label="t('auth.password')" prop="password">
             <ElInput
               v-model="form.password"
               size="large"
               type="password"
               autocomplete="current-password"
-              placeholder="Enter password"
+              :placeholder="t('auth.enterPassword')"
               show-password
             />
           </ElFormItem>
@@ -104,7 +106,7 @@ const login = async () => {
               native-type="submit"
               class="login-submit-btn"
             >
-              Sign In
+              {{ t('auth.signIn') }}
             </ElButton>
           </ElFormItem>
         </ElForm>
