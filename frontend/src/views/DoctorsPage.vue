@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import httpClient from '@/shared/http'
 import { useAuthStore } from '@/features/auth'
+import { adminDoctorProfilesApi } from '@/features/content/api/doctor-profiles'
+import type { DoctorProfileAdmin } from '@/features/content/types'
 
 const { t } = useI18n()
+const router = useRouter()
 
 interface DoctorUser {
   id: number
@@ -19,16 +23,42 @@ interface DoctorUser {
   is_active: boolean
 }
 
+type ProfileStatus = 'published' | 'pending' | 'draft' | 'rejected' | 'none'
+
+interface DoctorRow extends DoctorUser {
+  profile?: DoctorProfileAdmin
+  title: string
+  specialty: string
+  departmentNames: string
+  profileStatus: ProfileStatus
+}
+
+function deriveStatus(p?: DoctorProfileAdmin): ProfileStatus {
+  if (!p) return 'none'
+  if (p.draft_status === 'pending') return 'pending'
+  if (p.is_published) return 'published'
+  if (p.draft_status === 'rejected') return 'rejected'
+  return p.title || p.specialty ? 'draft' : 'none'
+}
+
+const statusTagType: Record<ProfileStatus, 'success' | 'warning' | 'info' | 'danger'> = {
+  published: 'success',
+  pending: 'warning',
+  draft: 'info',
+  rejected: 'danger',
+  none: 'info',
+}
+
 const authStore = useAuthStore()
 const loading = ref(false)
 const doctors = ref<DoctorUser[]>([])
+const profiles = ref<DoctorProfileAdmin[]>([])
 
 const query = ref('')
-const statusFilter = ref<'all' | 'active' | 'inactive'>('all')
+const reviewFilter = ref<'all' | 'pending'>('all')
 const showDialog = ref(false)
-const editingId = ref<number | null>(null)
 const showDeleteDialog = ref(false)
-const deleteTarget = ref<DoctorUser | null>(null)
+const deleteTarget = ref<DoctorRow | null>(null)
 const formRef = ref<FormInstance>()
 
 const form = ref({
@@ -48,31 +78,54 @@ const formRules: FormRules = {
 
 const canManage = computed(() => authStore.isAdmin)
 
-const filteredDoctors = computed(() => {
-  return doctors.value.filter((item) => {
-    const text = `${item.username} ${item.name} ${item.email} ${item.phone}`.toLowerCase()
-    const hitSearch = !query.value || text.includes(query.value.toLowerCase())
-    const hitStatus =
-      statusFilter.value === 'all' ||
-      (statusFilter.value === 'active' && item.is_active) ||
-      (statusFilter.value === 'inactive' && !item.is_active)
-    return hitSearch && hitStatus
+const rows = computed<DoctorRow[]>(() => {
+  const byUserId = new Map<number, DoctorProfileAdmin>()
+  for (const p of profiles.value) byUserId.set(p.user_id, p)
+
+  return doctors.value.map((doctor) => {
+    const profile = byUserId.get(doctor.id)
+    return {
+      ...doctor,
+      profile,
+      title: profile?.title || '',
+      specialty: profile?.specialty || '',
+      departmentNames: profile?.departments?.map((d) => d.name).join(', ') || '',
+      profileStatus: deriveStatus(profile),
+    }
   })
 })
 
-const displayName = (doctor: DoctorUser) => {
+const pendingCount = computed(
+  () => rows.value.filter((row) => row.profileStatus === 'pending').length,
+)
+
+const filteredDoctors = computed(() => {
+  return rows.value.filter((item) => {
+    const text =
+      `${item.username} ${item.name} ${item.email} ${item.phone} ${item.title} ${item.specialty} ${item.departmentNames}`.toLowerCase()
+    const hitSearch = !query.value || text.includes(query.value.toLowerCase())
+    const hitFilter = reviewFilter.value === 'all' || item.profileStatus === 'pending'
+    return hitSearch && hitFilter
+  })
+})
+
+const displayName = (doctor: DoctorRow | DoctorUser) => {
   return doctor.name?.trim() || '-'
 }
 
-const fetchDoctors = async () => {
-  const response = await httpClient.get('/api/auth/doctors/')
-  doctors.value = response.data
+const fetchData = async () => {
+  const [doctorsRes, profilesRes] = await Promise.all([
+    httpClient.get('/api/auth/doctors/'),
+    adminDoctorProfilesApi.list(),
+  ])
+  doctors.value = doctorsRes.data
+  profiles.value = profilesRes
 }
 
 const loadPageData = async () => {
   loading.value = true
   try {
-    await fetchDoctors()
+    await fetchData()
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || t('doctors.loadFailed'))
   } finally {
@@ -92,22 +145,12 @@ const resetForm = () => {
 
 const openCreate = () => {
   if (!canManage.value) return
-  editingId.value = null
   resetForm()
   showDialog.value = true
 }
 
-const openEdit = (doctor: DoctorUser) => {
-  if (!canManage.value) return
-  editingId.value = doctor.id
-  form.value = {
-    username: doctor.username,
-    name: doctor.name,
-    email: doctor.email,
-    phone: doctor.phone,
-    password: '',
-  }
-  showDialog.value = true
+const openDetail = (doctor: DoctorRow) => {
+  router.push(`/doctors/${doctor.id}`)
 }
 
 const extractErrorMessage = (error: any, fallback: string) => {
@@ -141,20 +184,16 @@ const saveDoctor = async () => {
   }
 
   try {
-    if (editingId.value) {
-      await httpClient.patch(`/api/auth/doctors/${editingId.value}/`, payload)
-    } else {
-      await httpClient.post('/api/auth/doctors/', payload)
-    }
+    await httpClient.post('/api/auth/doctors/', payload)
     showDialog.value = false
-    ElMessage.success(editingId.value ? t('doctors.updated') : t('doctors.created'))
-    await fetchDoctors()
+    ElMessage.success(t('doctors.created'))
+    await fetchData()
   } catch (error: any) {
     ElMessage.error(extractErrorMessage(error, t('doctors.saveFailed')))
   }
 }
 
-const requestRemoveDoctor = (doctor: DoctorUser) => {
+const requestRemoveDoctor = (doctor: DoctorRow) => {
   if (!canManage.value) return
   deleteTarget.value = doctor
   showDeleteDialog.value = true
@@ -173,7 +212,7 @@ const removeDoctor = async () => {
     showDeleteDialog.value = false
     deleteTarget.value = null
     ElMessage.success(t('doctors.deleted'))
-    await fetchDoctors()
+    await fetchData()
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || t('doctors.deleteFailed'))
   }
@@ -214,11 +253,12 @@ onMounted(async () => {
         clearable
         style="max-width: 320px"
       />
-      <el-select v-model="statusFilter" style="width: 160px">
-        <el-option :label="t('doctors.allStatus')" value="all" />
-        <el-option :label="t('doctors.statusActive')" value="active" />
-        <el-option :label="t('doctors.statusInactive')" value="inactive" />
-      </el-select>
+      <el-radio-group v-model="reviewFilter">
+        <el-radio-button value="all">{{ t('doctors.filterAll') }}</el-radio-button>
+        <el-radio-button value="pending">
+          {{ t('doctors.filterPending') }} {{ pendingCount }}
+        </el-radio-button>
+      </el-radio-group>
     </section>
 
     <el-table
@@ -230,22 +270,25 @@ onMounted(async () => {
       <el-table-column prop="name" :label="t('doctors.columnName')" min-width="140">
         <template #default="{ row }">{{ displayName(row) }}</template>
       </el-table-column>
-      <el-table-column prop="email" :label="t('doctors.columnEmail')" min-width="180">
-        <template #default="{ row }">{{ row.email || '-' }}</template>
+      <el-table-column prop="title" :label="t('doctors.columnTitle')" min-width="120">
+        <template #default="{ row }">{{ row.title || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="phone" :label="t('doctors.columnPhone')" min-width="130">
-        <template #default="{ row }">{{ row.phone || '-' }}</template>
+      <el-table-column prop="specialty" :label="t('doctors.columnSpecialty')" min-width="160">
+        <template #default="{ row }">{{ row.specialty || '-' }}</template>
       </el-table-column>
-      <el-table-column :label="t('doctors.columnStatus')" width="100">
+      <el-table-column :label="t('doctors.columnDepartments')" min-width="160">
+        <template #default="{ row }">{{ row.departmentNames || '-' }}</template>
+      </el-table-column>
+      <el-table-column :label="t('doctors.columnProfileStatus')" width="130">
         <template #default="{ row }">
-          <el-tag :type="row.is_active ? 'success' : 'danger'" size="small">
-            {{ row.is_active ? t('doctors.tagActive') : t('doctors.tagInactive') }}
+          <el-tag :type="statusTagType[row.profileStatus]" size="small">
+            {{ t('doctorStatus.' + row.profileStatus) }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column :label="t('common.actions')" width="180" fixed="right">
         <template #default="{ row }">
-          <el-button text :disabled="!canManage" @click="openEdit(row)">{{ t('common.edit') }}</el-button>
+          <el-button text @click="openDetail(row)">{{ t('common.edit') }}</el-button>
           <el-button text type="danger" :disabled="!canManage" @click="requestRemoveDoctor(row)">{{ t('common.delete') }}</el-button>
         </template>
       </el-table-column>
@@ -270,10 +313,10 @@ onMounted(async () => {
       </template>
     </el-dialog>
 
-    <!-- Create / Edit dialog -->
+    <!-- Create dialog (account creation) -->
     <el-dialog
       v-model="showDialog"
-      :title="editingId ? t('doctors.editTitle') : t('doctors.addTitle')"
+      :title="t('doctors.addTitle')"
       width="560px"
       @close="onDialogClose"
     >
@@ -295,7 +338,7 @@ onMounted(async () => {
             v-model="form.password"
             type="password"
             show-password
-            :placeholder="editingId ? t('doctors.placeholderResetPassword') : t('doctors.placeholderInitialPassword')"
+            :placeholder="t('doctors.placeholderInitialPassword')"
           />
         </el-form-item>
       </el-form>
