@@ -8,7 +8,7 @@ import BrandLogo from '@/components/BrandLogo.vue'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import { elementLocale } from '@/i18n'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
-import { DataLine, FirstAidKit, User, Calendar, Timer, Notebook, SwitchButton, OfficeBuilding, Memo, Edit } from '@element-plus/icons-vue'
+import { DataLine, FirstAidKit, User, Calendar, Timer, Notebook, SwitchButton, OfficeBuilding, Edit, Setting } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,30 +22,29 @@ interface NavItem {
   path: string
   labelKey: string
   icon: unknown
-  roles?: Array<Role>
+  roles: Array<Role>
 }
 
 const navItems: Array<NavItem> = [
-  { path: '/dashboard', labelKey: 'nav.dashboard', icon: DataLine },
-  { path: '/doctors', labelKey: 'nav.doctors', icon: FirstAidKit },
-  { path: '/patients', labelKey: 'nav.patients', icon: User },
-  { path: '/appointments', labelKey: 'nav.appointments', icon: Calendar },
-  { path: '/timeslots', labelKey: 'nav.schedule', icon: Timer, roles: ['doctor', 'admin'] },
-  { path: '/records', labelKey: 'nav.records', icon: Notebook, roles: ['doctor', 'admin'] },
+  { path: '/dashboard', labelKey: 'nav.dashboard', icon: DataLine, roles: ['admin', 'doctor'] },
+  { path: '/home', labelKey: 'nav.home', icon: DataLine, roles: ['patient'] },
+  { path: '/appointments', labelKey: 'nav.appointments', icon: Calendar, roles: ['admin'] },
+  { path: '/appointments', labelKey: 'nav.myAppointments', icon: Calendar, roles: ['doctor', 'patient'] },
+  { path: '/portal/doctors', labelKey: 'nav.findDoctor', icon: FirstAidKit, roles: ['patient'] },
+  { path: '/doctors', labelKey: 'nav.doctors', icon: FirstAidKit, roles: ['admin'] },
+  { path: '/patients', labelKey: 'nav.patients', icon: User, roles: ['admin'] },
+  { path: '/timeslots', labelKey: 'nav.schedule', icon: Timer, roles: ['doctor'] },
+  { path: '/records', labelKey: 'nav.records', icon: Notebook, roles: ['admin', 'doctor'] },
   { path: '/admin/departments', labelKey: 'nav.departments', icon: OfficeBuilding, roles: ['admin'] },
-  { path: '/admin/doctor-profiles', labelKey: 'nav.doctorProfiles', icon: FirstAidKit, roles: ['admin'] },
-  { path: '/admin/reviews', labelKey: 'nav.pendingReviews', icon: Memo, roles: ['admin'] },
   { path: '/doctor/profile', labelKey: 'nav.myPublicProfile', icon: Edit, roles: ['doctor'] },
+  { path: '/profile', labelKey: 'nav.profile', icon: Setting, roles: ['admin', 'doctor', 'patient'] },
 ]
 
-const visibleNavItems = computed(() =>
-  navItems.filter((item) => {
-    if (!item.roles) return true
-    const role = authStore.user?.user_type
-    if (!role) return false
-    return item.roles.includes(role)
-  }),
-)
+const visibleNavItems = computed(() => {
+  const role = authStore.user?.user_type
+  if (!role) return []
+  return navItems.filter((item) => item.roles.includes(role))
+})
 
 const currentPageTitle = computed(() => {
   const routeName = String(route.name || '')
@@ -87,7 +86,7 @@ watch(
         </router-link>
 
         <nav class="sidebar-nav">
-          <router-link v-for="item in visibleNavItems" :key="item.path" :to="item.path" class="nav-link">
+          <router-link v-for="item in visibleNavItems" :key="item.path + item.labelKey" :to="item.path" class="nav-link">
             <el-icon class="nav-emoji"><component :is="item.icon" /></el-icon>
             <span class="nav-text">{{ t(item.labelKey) }}</span>
           </router-link>

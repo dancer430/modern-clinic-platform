@@ -2,6 +2,8 @@ export const en = {
   appointments: {
     // Page header
     title: 'Appointments',
+    titleManage: 'Appointments',
+    titleMine: 'My Appointments',
     slotsHint: 'Limited slots: 08:00-11:30 and 14:00-17:00 (every 30 minutes).',
     newAppointment: '+ New Appointment',
 
@@ -69,6 +71,8 @@ export const zh = {
   appointments: {
     // Page header
     title: '预约管理',
+    titleManage: '预约管理',
+    titleMine: '我的预约',
     slotsHint: '可预约时段有限：08:00-11:30 与 14:00-17:00（每 30 分钟一个时段）。',
     newAppointment: '+ 新建预约',
 

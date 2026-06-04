@@ -18,6 +18,9 @@ declare module 'vue-router' {
 
 const ROLES_ALL: Array<Role> = ['admin', 'doctor', 'patient']
 const ROLES_STAFF: Array<Role> = ['admin', 'doctor']
+const ROLES_ADMIN: Array<Role> = ['admin']
+const ROLES_DOCTOR: Array<Role> = ['doctor']
+const ROLES_PATIENT: Array<Role> = ['patient']
 
 const router = createRouter({
   history: createWebHistory(),
@@ -57,19 +60,31 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/DashboardPage.vue'),
-      meta: { requiresAuth: true, roles: ROLES_ALL },
+      meta: { requiresAuth: true, roles: ROLES_STAFF },
     },
     {
       path: '/patients',
       name: 'patients',
       component: () => import('@/views/PatientsPage.vue'),
-      meta: { requiresAuth: true, roles: ROLES_ALL },
+      meta: { requiresAuth: true, roles: ROLES_ADMIN },
     },
     {
       path: '/doctors',
       name: 'doctors',
       component: () => import('@/views/DoctorsPage.vue'),
-      meta: { requiresAuth: true, roles: ROLES_ALL },
+      meta: { requiresAuth: true, roles: ROLES_ADMIN },
+    },
+    {
+      path: '/home',
+      name: 'patient-home',
+      component: () => import('@/views/PatientHomePage.vue'),
+      meta: { requiresAuth: true, roles: ROLES_PATIENT },
+    },
+    {
+      path: '/doctors/:id',
+      name: 'doctor-detail',
+      component: () => import('@/features/content/pages/admin/DoctorDetailPage.vue'),
+      meta: { requiresAuth: true, roles: ROLES_ADMIN },
     },
     {
       path: '/appointments',
@@ -107,24 +122,9 @@ const router = createRouter({
       component: () => import('@/features/content/pages/admin/AdminDepartmentEdit.vue'),
       meta: { requiresAuth: true, roles: ['admin'] },
     },
-    {
-      path: '/admin/doctor-profiles',
-      name: 'admin-doctor-profile-list',
-      component: () => import('@/features/content/pages/admin/AdminDoctorProfileList.vue'),
-      meta: { requiresAuth: true, roles: ['admin'] },
-    },
-    {
-      path: '/admin/doctor-profiles/:userId',
-      name: 'admin-doctor-profile-edit',
-      component: () => import('@/features/content/pages/admin/AdminDoctorProfileEdit.vue'),
-      meta: { requiresAuth: true, roles: ['admin'] },
-    },
-    {
-      path: '/admin/reviews',
-      name: 'admin-pending-reviews',
-      component: () => import('@/features/content/pages/admin/AdminPendingReviews.vue'),
-      meta: { requiresAuth: true, roles: ['admin'] },
-    },
+    { path: '/admin/doctor-profiles', redirect: '/doctors' },
+    { path: '/admin/doctor-profiles/:userId', redirect: (to) => `/doctors/${to.params.userId}` },
+    { path: '/admin/reviews', redirect: '/doctors' },
     {
       path: '/doctor/profile',
       name: 'doctor-my-profile',
@@ -133,6 +133,8 @@ const router = createRouter({
     },
   ],
 })
+
+const homePathForRole = (role?: Role | null): string => (role === 'patient' ? '/home' : '/dashboard')
 
 export const beforeEachGuard = (
   to: RouteLocationNormalized,
@@ -146,7 +148,7 @@ export const beforeEachGuard = (
     return
   }
   if (to.path === '/login' && auth.isAuthenticated) {
-    next('/dashboard')
+    next(homePathForRole(auth.user?.user_type))
     return
   }
   const allowed = to.meta.roles
@@ -154,7 +156,12 @@ export const beforeEachGuard = (
     const role = auth.user?.user_type
     if (!role || !allowed.includes(role)) {
       ElMessage.warning('You do not have access to that page')
-      next('/dashboard')
+      const home = homePathForRole(role)
+      if (home === to.path) {
+        next('/login')
+      } else {
+        next(home)
+      }
       return
     }
   }

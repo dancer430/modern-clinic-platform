@@ -3,6 +3,8 @@ import { en as staffEn } from './fragments/staff-pages'
 import { en as portalEn } from './fragments/portal'
 import { en as adminEn } from './fragments/admin'
 import { en as doctorProfileEn } from './fragments/doctor-profile'
+import { en as doctorStatusEn } from './fragments/doctor-status'
+import { en as doctorDetailEn } from './fragments/doctor-detail'
 
 export default {
   ...appointmentsEn,
@@ -10,6 +12,8 @@ export default {
   ...portalEn,
   ...adminEn,
   ...doctorProfileEn,
+  ...doctorStatusEn,
+  ...doctorDetailEn,
   common: {
     appName: 'Medical Booking Platform',
     actions: 'Actions',
@@ -50,6 +54,10 @@ export default {
     logout: 'Logout',
     workspace: 'Workspace',
     demoUser: 'demo_user',
+    home: 'Home',
+    myAppointments: 'My Appointments',
+    findDoctor: 'Find a doctor',
+    profile: 'Profile',
   },
   pageTitle: {
     login: 'Sign In',
@@ -70,6 +78,8 @@ export default {
     'portal-department-detail': 'Department',
     'portal-doctor-list': 'Doctors',
     'portal-doctor-detail': 'Doctor',
+    'patient-home': 'Home',
+    'doctor-detail': 'Doctor',
   },
   status: {
     pending: 'Pending',
@@ -97,6 +107,13 @@ export default {
     pleaseEnterUsername: 'Please enter username or email',
     pleaseEnterPassword: 'Please enter password',
     loginFailed: 'Login failed',
+  },
+  patientHome: {
+    title: 'Home',
+    subtitle: 'Your upcoming appointments.',
+    book: 'Book an appointment',
+    noUpcoming: 'No upcoming appointments.',
+    upcoming: 'Upcoming appointments',
   },
   dashboard: {
     title: 'Today Operations',
