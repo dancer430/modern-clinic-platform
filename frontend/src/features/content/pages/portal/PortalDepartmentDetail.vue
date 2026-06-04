@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DoctorCard from '../../components/DoctorCard.vue'
 import { portalDepartmentsApi, type PortalDepartmentDetailResponse } from '../../api/departments'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const data = ref<PortalDepartmentDetailResponse | null>(null)
@@ -16,7 +18,7 @@ const load = async () => {
   try {
     data.value = await portalDepartmentsApi.detail(String(route.params.slug))
     if (data.value?.department.name) {
-      document.title = `${data.value.department.name} – Departments`
+      document.title = t('portal.departmentDetail.documentTitle', { name: data.value.department.name })
     }
   } catch (e) {
     error.value = (e as Error).message
@@ -31,14 +33,14 @@ watch(() => route.params.slug, load)
 
 <template>
   <main class="portal-page" v-if="!loading && data">
-    <button class="back" @click="router.push('/portal/departments')">← All departments</button>
+    <button class="back" @click="router.push('/portal/departments')">{{ t('portal.departmentDetail.backToAll') }}</button>
     <header class="portal-page__hero">
       <h1>{{ data.department.name }}</h1>
       <p>{{ data.department.summary }}</p>
     </header>
     <article class="portal-page__body" v-html="data.department.description_html" />
     <section class="portal-page__doctors">
-      <h2>Doctors in this department</h2>
+      <h2>{{ t('portal.departmentDetail.doctorsHeading') }}</h2>
       <div class="portal-page__doctor-grid">
         <DoctorCard
           v-for="doc in data.doctors"
@@ -49,7 +51,7 @@ watch(() => route.params.slug, load)
       </div>
     </section>
   </main>
-  <div v-else-if="loading" class="portal-page__loading">Loading…</div>
+  <div v-else-if="loading" class="portal-page__loading">{{ t('portal.loading') }}</div>
   <div v-else-if="error" class="portal-page__error">{{ error }}</div>
 </template>
 

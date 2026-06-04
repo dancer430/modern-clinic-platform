@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import httpClient from '@/shared/http'
 import { useAuthStore } from '@/features/auth'
+import { currentLocale } from '@/i18n'
+
+const { t } = useI18n()
+
+const intlLocale = computed(() => (currentLocale.value === 'zh' ? 'zh-CN' : 'en-US'))
 
 const SLOT_TIMES = [
   '08:00',
@@ -76,9 +82,13 @@ const patients = ref<UserOption[]>([])
 const scheduleSlots = ref<ScheduleSlot[]>([])
 const appointments = ref<AppointmentItem[]>([])
 
-const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+// Monday-first localized weekday short names (Jan 2 2023 is a Monday).
+const weekdayLabels = computed(() => {
+  const fmt = new Intl.DateTimeFormat(intlLocale.value, { weekday: 'short' })
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2023, 0, 2 + i)))
+})
 
-const monthLabel = computed(() => new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(monthCursor.value))
+const monthLabel = computed(() => new Intl.DateTimeFormat(intlLocale.value, { month: 'long', year: 'numeric' }).format(monthCursor.value))
 const isAdminRole = computed(() => authStore.isAdmin)
 
 const displayDoctorName = (doctor: UserOption) => doctor.name?.trim() || doctor.username
@@ -270,7 +280,7 @@ const loadPageData = async () => {
       }
     }
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to load schedule data')
+    ElMessage.error(error.response?.data?.detail || t('schedule.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -359,9 +369,9 @@ const applySelectedSlots = async (mode: 'available' | 'unavailable') => {
     await Promise.all(requests)
     selectedSlotTimes.value = []
     await fetchSlots()
-    ElMessage.success('Slot availability updated successfully')
+    ElMessage.success(t('schedule.slotsUpdated'))
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to update selected slot availability')
+    ElMessage.error(error.response?.data?.detail || t('schedule.slotsUpdateFailed'))
   }
 }
 
@@ -383,18 +393,18 @@ onMounted(async () => {
   <div class="page schedule-page" v-loading="loading">
     <section class="toolbar">
       <div>
-        <h2>My Schedule</h2>
-        <p>Doctors can mark time slots unavailable to prevent new appointments.</p>
+        <h2>{{ t('schedule.title') }}</h2>
+        <p>{{ t('schedule.subtitle') }}</p>
       </div>
       <el-button-group>
-        <el-button @click="goPrevMonth">Prev</el-button>
-        <el-button @click="jumpToday">Today</el-button>
-        <el-button @click="goNextMonth">Next</el-button>
+        <el-button @click="goPrevMonth">{{ t('schedule.prev') }}</el-button>
+        <el-button @click="jumpToday">{{ t('schedule.today') }}</el-button>
+        <el-button @click="goNextMonth">{{ t('schedule.next') }}</el-button>
       </el-button-group>
     </section>
 
     <section class="filters" v-if="isAdminRole">
-      <el-select v-model="selectedDoctorId" placeholder="Select doctor" style="width: 240px">
+      <el-select v-model="selectedDoctorId" :placeholder="t('schedule.selectDoctor')" style="width: 240px">
         <el-option
           v-for="doctor in doctors"
           :key="doctor.id"
@@ -424,10 +434,10 @@ onMounted(async () => {
           >
             <span v-if="cell.day" class="day-label">{{ cell.day }}</span>
             <span v-if="cell.date && blockedCountByDate[cell.date]" class="slot-count">
-              {{ blockedCountByDate[cell.date] }} blocked
+              {{ t('schedule.blockedCount', { count: blockedCountByDate[cell.date] }) }}
             </span>
             <div v-if="cell.date && appointmentStatsByDate[cell.date]" class="appointment-stats">
-              <span class="stats-total">{{ appointmentStatsByDate[cell.date].total }} appt</span>
+              <span class="stats-total">{{ t('schedule.apptCount', { count: appointmentStatsByDate[cell.date].total }) }}</span>
               <span class="stats-split">
                 <span class="stats-pending">P{{ appointmentStatsByDate[cell.date].pending }}</span>
                 <span class="stats-confirmed">C{{ appointmentStatsByDate[cell.date].confirmed }}</span>
@@ -447,25 +457,25 @@ onMounted(async () => {
         </header>
 
         <div class="day-appointments">
-          <h4>Current day appointments</h4>
+          <h4>{{ t('schedule.currentDayAppointments') }}</h4>
           <el-radio-group v-model="dayFilterStatus" size="small" class="day-summary-row">
             <el-radio-button value="all">
-              Total {{ dayAppointmentSummary.total }}
+              {{ t('schedule.summaryTotal', { count: dayAppointmentSummary.total }) }}
             </el-radio-button>
             <el-radio-button value="pending">
-              Pending {{ dayAppointmentSummary.pending }}
+              {{ t('schedule.summaryPending', { count: dayAppointmentSummary.pending }) }}
             </el-radio-button>
             <el-radio-button value="confirmed">
-              Confirmed {{ dayAppointmentSummary.confirmed }}
+              {{ t('schedule.summaryConfirmed', { count: dayAppointmentSummary.confirmed }) }}
             </el-radio-button>
             <el-radio-button value="completed">
-              Completed {{ dayAppointmentSummary.completed }}
+              {{ t('schedule.summaryCompleted', { count: dayAppointmentSummary.completed }) }}
             </el-radio-button>
           </el-radio-group>
 
           <el-empty
             v-if="filteredActiveAppointments.length === 0"
-            :description="dayFilterStatus === 'all' ? 'No appointments yet.' : `No ${dayFilterStatus} appointments.`"
+            :description="dayFilterStatus === 'all' ? t('schedule.noAppointments') : t('schedule.noStatusAppointments', { status: t('status.' + dayFilterStatus) })"
             :image-size="60"
           />
           <div v-else class="appointment-card-list">
@@ -482,18 +492,18 @@ onMounted(async () => {
                   <span>{{ displayPatientName(item) }}</span>
                 </div>
                 <el-tag :type="statusTagType(item.status)" size="small" effect="dark">
-                  {{ item.status }}
+                  {{ t('status.' + item.status) }}
                 </el-tag>
               </header>
-              <p class="appointment-card-reason">{{ item.reason || 'No reason provided' }}</p>
+              <p class="appointment-card-reason">{{ item.reason || t('schedule.noReasonProvided') }}</p>
             </article>
           </div>
         </div>
 
         <section class="slot-card-section">
           <header class="slot-card-header">
-            <h4>Availability Slots</h4>
-            <el-tag size="small" type="info">{{ selectedSlotTimes.length }} selected</el-tag>
+            <h4>{{ t('schedule.availabilitySlots') }}</h4>
+            <el-tag size="small" type="info">{{ t('schedule.selectedCount', { count: selectedSlotTimes.length }) }}</el-tag>
           </header>
 
           <div class="slot-card-toolbar" v-if="canEditSchedule">
@@ -503,7 +513,7 @@ onMounted(async () => {
               :disabled="selectedSlotTimes.length === 0"
               @click="applySelectedSlots('unavailable')"
             >
-              Mark Unavailable
+              {{ t('schedule.markUnavailable') }}
             </button>
             <button
               type="button"
@@ -511,7 +521,7 @@ onMounted(async () => {
               :disabled="selectedSlotTimes.length === 0"
               @click="applySelectedSlots('available')"
             >
-              Mark Available
+              {{ t('schedule.markAvailable') }}
             </button>
             <button
               type="button"
@@ -519,13 +529,13 @@ onMounted(async () => {
               :disabled="selectedSlotTimes.length === 0"
               @click="clearSlotSelection"
             >
-              Clear
+              {{ t('schedule.clear') }}
             </button>
           </div>
 
           <el-empty
             v-if="slotRows.length === 0"
-            description="Select a doctor to view slots."
+            :description="t('schedule.selectDoctorToViewSlots')"
             :image-size="60"
           />
           <div v-else class="time-chip-grid">
@@ -539,7 +549,7 @@ onMounted(async () => {
               @click="toggleSlotSelection(row.time)"
             >
               <strong>{{ row.time }}</strong>
-              <small>{{ row.blocked ? 'unavailable' : 'available' }} · {{ row.booked }} booked</small>
+              <small>{{ row.blocked ? t('schedule.slotUnavailable') : t('schedule.slotAvailable') }} · {{ t('schedule.slotBooked', { count: row.booked }) }}</small>
             </button>
           </div>
         </section>

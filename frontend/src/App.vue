@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/features/auth'
 import type { Role } from '@/features/auth'
 import BrandLogo from '@/components/BrandLogo.vue'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import { elementLocale } from '@/i18n'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
 import { DataLine, FirstAidKit, User, Calendar, Timer, Notebook, SwitchButton, OfficeBuilding, Memo, Edit } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const { platformName, loadPlatformBrand } = usePlatformBrand()
 
@@ -16,22 +20,22 @@ const showShell = computed(() => authStore.isAuthenticated && route.path !== '/l
 
 interface NavItem {
   path: string
-  label: string
+  labelKey: string
   icon: unknown
   roles?: Array<Role>
 }
 
 const navItems: Array<NavItem> = [
-  { path: '/dashboard', label: 'Dashboard', icon: DataLine },
-  { path: '/doctors', label: 'Doctors', icon: FirstAidKit },
-  { path: '/patients', label: 'Patients', icon: User },
-  { path: '/appointments', label: 'Appointments', icon: Calendar },
-  { path: '/timeslots', label: 'My Schedule', icon: Timer, roles: ['doctor', 'admin'] },
-  { path: '/records', label: 'Medical Records', icon: Notebook, roles: ['doctor', 'admin'] },
-  { path: '/admin/departments', label: 'Departments', icon: OfficeBuilding, roles: ['admin'] },
-  { path: '/admin/doctor-profiles', label: 'Doctor profiles', icon: FirstAidKit, roles: ['admin'] },
-  { path: '/admin/reviews', label: 'Pending reviews', icon: Memo, roles: ['admin'] },
-  { path: '/doctor/profile', label: 'My public profile', icon: Edit, roles: ['doctor'] },
+  { path: '/dashboard', labelKey: 'nav.dashboard', icon: DataLine },
+  { path: '/doctors', labelKey: 'nav.doctors', icon: FirstAidKit },
+  { path: '/patients', labelKey: 'nav.patients', icon: User },
+  { path: '/appointments', labelKey: 'nav.appointments', icon: Calendar },
+  { path: '/timeslots', labelKey: 'nav.schedule', icon: Timer, roles: ['doctor', 'admin'] },
+  { path: '/records', labelKey: 'nav.records', icon: Notebook, roles: ['doctor', 'admin'] },
+  { path: '/admin/departments', labelKey: 'nav.departments', icon: OfficeBuilding, roles: ['admin'] },
+  { path: '/admin/doctor-profiles', labelKey: 'nav.doctorProfiles', icon: FirstAidKit, roles: ['admin'] },
+  { path: '/admin/reviews', labelKey: 'nav.pendingReviews', icon: Memo, roles: ['admin'] },
+  { path: '/doctor/profile', labelKey: 'nav.myPublicProfile', icon: Edit, roles: ['doctor'] },
 ]
 
 const visibleNavItems = computed(() =>
@@ -43,30 +47,12 @@ const visibleNavItems = computed(() =>
   }),
 )
 
-const pageTitleMap: Record<string, string> = {
-  login: 'Sign In',
-  dashboard: 'Dashboard',
-  doctors: 'Doctors',
-  patients: 'Patients',
-  appointments: 'Appointments',
-  timeslots: 'Schedule',
-  records: 'Medical Records',
-  profile: 'Personal Center',
-  'admin-department-list': 'Departments',
-  'admin-department-edit': 'Department',
-  'admin-doctor-profile-list': 'Doctor Profiles',
-  'admin-doctor-profile-edit': 'Doctor Profile',
-  'admin-pending-reviews': 'Pending Reviews',
-  'doctor-my-profile': 'My Public Profile',
-  'portal-department-list': 'Departments',
-  'portal-department-detail': 'Department',
-  'portal-doctor-list': 'Doctors',
-  'portal-doctor-detail': 'Doctor',
-}
-
 const currentPageTitle = computed(() => {
   const routeName = String(route.name || '')
-  return pageTitleMap[routeName] || 'Workspace'
+  if (!routeName) return t('nav.workspace')
+  const key = `pageTitle.${routeName}`
+  const translated = t(key)
+  return translated === key ? t('nav.workspace') : translated
 })
 
 const handleLogout = async () => {
@@ -92,6 +78,7 @@ watch(
 </script>
 
 <template>
+  <el-config-provider :locale="elementLocale">
   <div class="app-shell">
     <template v-if="showShell">
       <aside class="shell-sidebar">
@@ -102,9 +89,13 @@ watch(
         <nav class="sidebar-nav">
           <router-link v-for="item in visibleNavItems" :key="item.path" :to="item.path" class="nav-link">
             <el-icon class="nav-emoji"><component :is="item.icon" /></el-icon>
-            <span class="nav-text">{{ item.label }}</span>
+            <span class="nav-text">{{ t(item.labelKey) }}</span>
           </router-link>
         </nav>
+
+        <div class="sidebar-lang">
+          <LanguageSwitcher />
+        </div>
 
         <div class="sidebar-footer" @click="openProfile">
           <span class="avatar-chip">
@@ -117,10 +108,10 @@ watch(
             <template v-else>{{ authStore.user?.name?.[0] || authStore.user?.username?.[0] || 'U' }}</template>
           </span>
           <div class="user-meta">
-            <strong>{{ authStore.user?.username || 'demo_user' }}</strong>
+            <strong>{{ authStore.user?.username || t('nav.demoUser') }}</strong>
             <span>{{ authStore.user?.user_type || 'admin' }}</span>
           </div>
-          <el-button class="footer-logout" title="Logout" aria-label="Logout" @click.stop="handleLogout">
+          <el-button class="footer-logout" :title="t('nav.logout')" :aria-label="t('nav.logout')" @click.stop="handleLogout">
             <el-icon><SwitchButton /></el-icon>
           </el-button>
         </div>
@@ -133,8 +124,30 @@ watch(
       </section>
     </template>
 
-    <main v-else class="login-host">
-      <router-view />
-    </main>
+    <template v-else>
+      <div class="lang-floating">
+        <LanguageSwitcher />
+      </div>
+      <main class="login-host">
+        <router-view />
+      </main>
+    </template>
   </div>
+  </el-config-provider>
 </template>
+
+<style scoped>
+.sidebar-lang {
+  padding: 12px 16px 4px;
+  margin-top: auto;
+}
+.sidebar-lang + .sidebar-footer {
+  margin-top: 0;
+}
+.lang-floating {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 50;
+}
+</style>

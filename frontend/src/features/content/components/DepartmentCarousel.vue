@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import type { DepartmentCard } from '../types'
 import { portalDepartmentsApi } from '../api/departments'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{ intervalMs?: number; limit?: number }>(), {
   intervalMs: 4000,
@@ -62,7 +65,7 @@ onBeforeUnmount(stop)
         v-for="(item, idx) in items"
         :key="item.id"
         :class="{ active: idx === current }"
-        :aria-label="`Show ${item.name}`"
+        :aria-label="t('portal.carousel.showAria', { name: item.name })"
         @click="go(idx)"
       />
     </div>

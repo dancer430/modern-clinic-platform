@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import type { CreateAppointmentForm, UserOption } from '../types'
+
+const { t } = useI18n()
 
 defineProps<{
   modelValue: boolean
@@ -26,16 +30,16 @@ const closeDialog = () => {
 <template>
   <ElDialog
     :model-value="modelValue"
-    title="New Appointment"
+    :title="t('appointments.newAppointmentTitle')"
     width="600px"
     :before-close="closeDialog"
     @update:model-value="(value) => emit('update:modelValue', value)"
   >
     <ElForm label-position="top">
-      <ElFormItem label="Patient" required>
+      <ElFormItem :label="t('appointments.colPatient')" required>
         <ElSelect
           v-model="form.patient"
-          placeholder="Select patient"
+          :placeholder="t('appointments.selectPatient')"
           style="width: 100%;"
           :class="{ 'is-error': createSubmitAttempted && !form.patient }"
         >
@@ -47,10 +51,10 @@ const closeDialog = () => {
           />
         </ElSelect>
       </ElFormItem>
-      <ElFormItem label="Doctor" required>
+      <ElFormItem :label="t('appointments.colDoctor')" required>
         <ElSelect
           v-model="form.doctor"
-          placeholder="Select doctor"
+          :placeholder="t('appointments.selectDoctor')"
           style="width: 100%;"
           :class="{ 'is-error': createSubmitAttempted && !form.doctor }"
         >
@@ -62,20 +66,20 @@ const closeDialog = () => {
           />
         </ElSelect>
       </ElFormItem>
-      <ElFormItem label="Date" required>
+      <ElFormItem :label="t('appointments.colDate')" required>
         <ElDatePicker
           v-model="form.date"
           type="date"
-          placeholder="Pick a date"
+          :placeholder="t('appointments.pickDate')"
           value-format="YYYY-MM-DD"
           style="width: 100%;"
           :class="{ 'is-error': createSubmitAttempted && !form.date }"
         />
       </ElFormItem>
-      <ElFormItem label="Time Slot" required>
+      <ElFormItem :label="t('appointments.timeSlot')" required>
         <ElSelect
           v-model="form.time"
-          placeholder="Select time slot"
+          :placeholder="t('appointments.selectTimeSlot')"
           style="width: 100%;"
           :class="{ 'is-error': createSubmitAttempted && !form.time }"
         >
@@ -88,24 +92,24 @@ const closeDialog = () => {
           />
         </ElSelect>
       </ElFormItem>
-      <ElFormItem label="Reason">
-        <ElInput v-model="form.reason" type="textarea" :rows="3" placeholder="Reason" />
+      <ElFormItem :label="t('appointments.reason')">
+        <ElInput v-model="form.reason" type="textarea" :rows="3" :placeholder="t('appointments.reason')" />
       </ElFormItem>
     </ElForm>
 
     <div class="slot-hint-card">
-      <p>Booked count by time for selected doctor/date</p>
+      <p>{{ t('appointments.bookedCountHint') }}</p>
       <ul>
         <li v-for="slot in slotOptions" :key="slot.time">
           <span>{{ slot.time }}</span>
-          <span>{{ slot.blocked ? 'Unavailable by schedule' : `${slot.booked} booked` }}</span>
+          <span>{{ slot.blocked ? t('appointments.unavailableBySchedule') : t('appointments.bookedCount', { count: slot.booked }) }}</span>
         </li>
       </ul>
     </div>
 
     <template #footer>
-      <ElButton @click="closeDialog">Cancel</ElButton>
-      <ElButton type="primary" @click="emit('submit')">Create</ElButton>
+      <ElButton @click="closeDialog">{{ t('common.cancel') }}</ElButton>
+      <ElButton type="primary" @click="emit('submit')">{{ t('appointments.create') }}</ElButton>
     </template>
   </ElDialog>
 </template>

@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { DraftStatus } from '../types'
 
 const props = defineProps<{ status: DraftStatus; published?: boolean }>()
 
+const { t } = useI18n()
+
 const label = computed(() => {
   switch (props.status) {
-    case 'pending': return 'Pending review'
-    case 'approved': return props.published ? 'Published' : 'Approved'
-    case 'rejected': return 'Rejected'
-    default: return props.published ? 'Published' : 'Draft'
+    case 'pending': return t('publishStatus.pendingReview')
+    case 'approved': return props.published ? t('publishStatus.published') : t('publishStatus.approved')
+    case 'rejected': return t('publishStatus.rejected')
+    default: return props.published ? t('publishStatus.published') : t('publishStatus.draft')
   }
 })
 

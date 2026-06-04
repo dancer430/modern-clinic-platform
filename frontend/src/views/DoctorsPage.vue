@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import httpClient from '@/shared/http'
 import { useAuthStore } from '@/features/auth'
+
+const { t } = useI18n()
 
 interface DoctorUser {
   id: number
@@ -37,10 +40,10 @@ const form = ref({
 })
 
 const formRules: FormRules = {
-  username: [{ required: true, message: 'Username is required', trigger: 'blur' }],
-  name: [{ required: true, message: 'Name is required', trigger: 'blur' }],
-  email: [{ required: true, message: 'Email is required', trigger: 'blur' }],
-  phone: [{ required: true, message: 'Phone is required', trigger: 'blur' }],
+  username: [{ required: true, message: () => t('doctors.usernameRequired'), trigger: 'blur' }],
+  name: [{ required: true, message: () => t('doctors.nameRequired'), trigger: 'blur' }],
+  email: [{ required: true, message: () => t('doctors.emailRequired'), trigger: 'blur' }],
+  phone: [{ required: true, message: () => t('doctors.phoneRequired'), trigger: 'blur' }],
 }
 
 const canManage = computed(() => authStore.isAdmin)
@@ -71,7 +74,7 @@ const loadPageData = async () => {
   try {
     await fetchDoctors()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to load doctors')
+    ElMessage.error(error.response?.data?.detail || t('doctors.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -144,10 +147,10 @@ const saveDoctor = async () => {
       await httpClient.post('/api/auth/doctors/', payload)
     }
     showDialog.value = false
-    ElMessage.success(editingId.value ? 'Doctor updated' : 'Doctor created')
+    ElMessage.success(editingId.value ? t('doctors.updated') : t('doctors.created'))
     await fetchDoctors()
   } catch (error: any) {
-    ElMessage.error(extractErrorMessage(error, 'Save doctor failed'))
+    ElMessage.error(extractErrorMessage(error, t('doctors.saveFailed')))
   }
 }
 
@@ -169,10 +172,10 @@ const removeDoctor = async () => {
     await httpClient.delete(`/api/auth/doctors/${deleteTarget.value.id}/`)
     showDeleteDialog.value = false
     deleteTarget.value = null
-    ElMessage.success('Doctor deleted')
+    ElMessage.success(t('doctors.deleted'))
     await fetchDoctors()
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Delete doctor failed')
+    ElMessage.error(error.response?.data?.detail || t('doctors.deleteFailed'))
   }
 }
 
@@ -189,15 +192,15 @@ onMounted(async () => {
   <div class="page">
     <section class="toolbar">
       <div>
-        <h2>Doctors</h2>
-        <p>{{ filteredDoctors.length }} doctor accounts</p>
+        <h2>{{ t('doctors.title') }}</h2>
+        <p>{{ t('doctors.countSummary', { count: filteredDoctors.length }) }}</p>
       </div>
-      <el-button type="primary" :disabled="!canManage" @click="openCreate">+ Add Doctor</el-button>
+      <el-button type="primary" :disabled="!canManage" @click="openCreate">{{ t('doctors.addDoctor') }}</el-button>
     </section>
 
     <el-alert
       v-if="!canManage"
-      title="Only admin can create, edit, or delete doctor accounts."
+      :title="t('doctors.adminOnlyNotice')"
       type="warning"
       show-icon
       :closable="false"
@@ -207,14 +210,14 @@ onMounted(async () => {
     <section class="toolbar" style="gap: 12px">
       <el-input
         v-model="query"
-        placeholder="Search doctor account"
+        :placeholder="t('doctors.searchPlaceholder')"
         clearable
         style="max-width: 320px"
       />
       <el-select v-model="statusFilter" style="width: 160px">
-        <el-option label="All status" value="all" />
-        <el-option label="Active" value="active" />
-        <el-option label="Inactive" value="inactive" />
+        <el-option :label="t('doctors.allStatus')" value="all" />
+        <el-option :label="t('doctors.statusActive')" value="active" />
+        <el-option :label="t('doctors.statusInactive')" value="inactive" />
       </el-select>
     </section>
 
@@ -224,81 +227,81 @@ onMounted(async () => {
       stripe
       style="width: 100%; margin-top: 16px"
     >
-      <el-table-column prop="name" label="Name" min-width="140">
+      <el-table-column prop="name" :label="t('doctors.columnName')" min-width="140">
         <template #default="{ row }">{{ displayName(row) }}</template>
       </el-table-column>
-      <el-table-column prop="email" label="Email" min-width="180">
+      <el-table-column prop="email" :label="t('doctors.columnEmail')" min-width="180">
         <template #default="{ row }">{{ row.email || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="phone" label="Phone" min-width="130">
+      <el-table-column prop="phone" :label="t('doctors.columnPhone')" min-width="130">
         <template #default="{ row }">{{ row.phone || '-' }}</template>
       </el-table-column>
-      <el-table-column label="Status" width="100">
+      <el-table-column :label="t('doctors.columnStatus')" width="100">
         <template #default="{ row }">
           <el-tag :type="row.is_active ? 'success' : 'danger'" size="small">
-            {{ row.is_active ? 'active' : 'inactive' }}
+            {{ row.is_active ? t('doctors.tagActive') : t('doctors.tagInactive') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Actions" width="180" fixed="right">
+      <el-table-column :label="t('common.actions')" width="180" fixed="right">
         <template #default="{ row }">
-          <el-button text :disabled="!canManage" @click="openEdit(row)">Edit</el-button>
-          <el-button text type="danger" :disabled="!canManage" @click="requestRemoveDoctor(row)">Delete</el-button>
+          <el-button text :disabled="!canManage" @click="openEdit(row)">{{ t('common.edit') }}</el-button>
+          <el-button text type="danger" :disabled="!canManage" @click="requestRemoveDoctor(row)">{{ t('common.delete') }}</el-button>
         </template>
       </el-table-column>
       <template #empty>
-        <el-empty description="No doctors found" />
+        <el-empty :description="t('doctors.empty')" />
       </template>
     </el-table>
 
     <!-- Delete confirmation dialog -->
     <el-dialog
       v-model="showDeleteDialog"
-      title="Delete Doctor Account"
+      :title="t('doctors.deleteTitle')"
       width="460px"
       :before-close="() => closeDeleteDialog()"
     >
       <p>
-        You are about to delete <strong>{{ deleteTarget ? displayName(deleteTarget) : '-' }}</strong>. This action cannot be undone.
+        {{ t('doctors.deleteConfirmPrefix') }} <strong>{{ deleteTarget ? displayName(deleteTarget) : '-' }}</strong>{{ t('doctors.deleteConfirmSuffix') }}
       </p>
       <template #footer>
-        <el-button @click="closeDeleteDialog">Keep Account</el-button>
-        <el-button type="danger" @click="removeDoctor">Delete Permanently</el-button>
+        <el-button @click="closeDeleteDialog">{{ t('doctors.keepAccount') }}</el-button>
+        <el-button type="danger" @click="removeDoctor">{{ t('doctors.deletePermanently') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- Create / Edit dialog -->
     <el-dialog
       v-model="showDialog"
-      :title="editingId ? 'Edit Doctor' : 'Add Doctor'"
+      :title="editingId ? t('doctors.editTitle') : t('doctors.addTitle')"
       width="560px"
       @close="onDialogClose"
     >
       <el-form ref="formRef" :model="form" :rules="formRules" label-position="top">
-        <el-form-item label="Username" prop="username">
-          <el-input v-model="form.username" placeholder="Username" />
+        <el-form-item :label="t('doctors.fieldUsername')" prop="username">
+          <el-input v-model="form.username" :placeholder="t('doctors.placeholderUsername')" />
         </el-form-item>
-        <el-form-item label="Name" prop="name">
-          <el-input v-model="form.name" placeholder="Name" />
+        <el-form-item :label="t('doctors.fieldName')" prop="name">
+          <el-input v-model="form.name" :placeholder="t('doctors.placeholderName')" />
         </el-form-item>
-        <el-form-item label="Email" prop="email">
-          <el-input v-model="form.email" placeholder="Email" />
+        <el-form-item :label="t('doctors.fieldEmail')" prop="email">
+          <el-input v-model="form.email" :placeholder="t('doctors.placeholderEmail')" />
         </el-form-item>
-        <el-form-item label="Phone" prop="phone">
-          <el-input v-model="form.phone" placeholder="Phone" />
+        <el-form-item :label="t('doctors.fieldPhone')" prop="phone">
+          <el-input v-model="form.phone" :placeholder="t('doctors.placeholderPhone')" />
         </el-form-item>
-        <el-form-item label="Password">
+        <el-form-item :label="t('doctors.fieldPassword')">
           <el-input
             v-model="form.password"
             type="password"
             show-password
-            :placeholder="editingId ? 'Reset password (optional)' : 'Initial password (optional)'"
+            :placeholder="editingId ? t('doctors.placeholderResetPassword') : t('doctors.placeholderInitialPassword')"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showDialog = false">Cancel</el-button>
-        <el-button type="primary" @click="saveDoctor">Save</el-button>
+        <el-button @click="showDialog = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="saveDoctor">{{ t('common.save') }}</el-button>
       </template>
     </el-dialog>
   </div>

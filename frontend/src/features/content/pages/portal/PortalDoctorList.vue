@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import DoctorCard from '../../components/DoctorCard.vue'
 import { portalDoctorsApi } from '../../api/doctor-profiles'
 import type { DoctorPortalCard } from '../../types'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const items = ref<DoctorPortalCard[]>([])
@@ -34,10 +36,10 @@ onMounted(load)
 <template>
   <main class="portal-page">
     <header class="portal-page__header">
-      <h1>Doctors</h1>
-      <p>Meet our medical team.</p>
+      <h1>{{ t('portal.doctorList.title') }}</h1>
+      <p>{{ t('portal.doctorList.subtitle') }}</p>
     </header>
-    <div v-if="loading" class="portal-page__loading">Loading…</div>
+    <div v-if="loading" class="portal-page__loading">{{ t('portal.loading') }}</div>
     <div v-else-if="error" class="portal-page__error">{{ error }}</div>
     <div v-else class="portal-page__grid">
       <DoctorCard

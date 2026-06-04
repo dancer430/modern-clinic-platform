@@ -55,3 +55,13 @@ beforeEach(() => {
   window.localStorage.clear()
   window.sessionStorage.clear()
 })
+
+// Make vue-i18n available to every mounted component, and pin the test locale
+// to English so existing text assertions stay stable.
+import { config } from '@vue/test-utils'
+import { i18n, setLocale } from './src/i18n'
+
+setLocale('en')
+if (!config.global.plugins.includes(i18n)) {
+  config.global.plugins.push(i18n)
+}

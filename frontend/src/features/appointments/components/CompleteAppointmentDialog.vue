@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import type { CompleteAppointmentForm } from '../types'
+
+const { t } = useI18n()
 
 defineProps<{
   modelValue: boolean
@@ -37,42 +40,42 @@ const openAttachmentPicker = () => {
 <template>
   <ElDialog
     :model-value="modelValue"
-    title="Complete Appointment"
+    :title="t('appointments.completeTitle')"
     width="620px"
     :before-close="closeDialog"
     @update:model-value="(value) => emit('update:modelValue', value)"
   >
     <p style="margin-bottom: 12px; color: var(--el-text-color-secondary);">
-      Diagnosis Result and Treatment Plan are required.
+      {{ t('appointments.completeHint') }}
     </p>
     <ElForm label-position="top">
-      <ElFormItem label="Diagnosis Result" required>
+      <ElFormItem :label="t('appointments.diagnosisResult')" required>
         <ElInput
           v-model="completeForm.diagnosisResult"
           type="textarea"
           :rows="3"
-          placeholder="Enter diagnosis result"
+          :placeholder="t('appointments.diagnosisResultPlaceholder')"
           :class="{ 'is-error': completeSubmitAttempted && !completeForm.diagnosisResult.trim() }"
         />
       </ElFormItem>
-      <ElFormItem label="Treatment Plan" required>
+      <ElFormItem :label="t('appointments.treatmentPlan')" required>
         <ElInput
           v-model="completeForm.treatmentPlan"
           type="textarea"
           :rows="3"
-          placeholder="Enter treatment plan"
+          :placeholder="t('appointments.treatmentPlanPlaceholder')"
           :class="{ 'is-error': completeSubmitAttempted && !completeForm.treatmentPlan.trim() }"
         />
       </ElFormItem>
-      <ElFormItem label="Medical Advice">
+      <ElFormItem :label="t('appointments.medicalAdvice')">
         <ElInput
           v-model="completeForm.medicalAdvice"
           type="textarea"
           :rows="3"
-          placeholder="Enter medical advice"
+          :placeholder="t('appointments.medicalAdvicePlaceholder')"
         />
       </ElFormItem>
-      <ElFormItem label="Attachments (image)">
+      <ElFormItem :label="t('appointments.attachmentsImage')">
         <div class="complete-attachment-area">
           <div
             class="file-uploader"
@@ -95,30 +98,30 @@ const openAttachmentPicker = () => {
             />
             <span class="file-uploader-icon">&#x2B06;</span>
             <div>
-              <p class="file-uploader-title">Upload attachments</p>
-              <p class="file-uploader-subtitle">Images only, auto-compressed before submit</p>
+              <p class="file-uploader-title">{{ t('appointments.uploadAttachments') }}</p>
+              <p class="file-uploader-subtitle">{{ t('appointments.uploadAttachmentsHint') }}</p>
             </div>
           </div>
           <p v-if="showSqliteAttachmentHint" style="margin: 4px 0 0; color: var(--el-text-color-secondary); font-size: 12px;">
-            Current environment is development (SQLite). Attachment submission will not take effect.
+            {{ t('appointments.sqliteAttachmentHint') }}
           </p>
           <ul v-if="completeForm.attachments.length > 0" class="complete-attachment-list">
             <li v-for="(item, index) in completeForm.attachments" :key="`${item.file_name}-${index}`">
               <span>{{ item.file_name }} &middot; {{ item.compressed_size }}KB</span>
-              <ElButton text type="danger" size="small" @click="emit('removeAttachment', index)">Remove</ElButton>
+              <ElButton text type="danger" size="small" @click="emit('removeAttachment', index)">{{ t('appointments.removeAttachment') }}</ElButton>
             </li>
           </ul>
         </div>
       </ElFormItem>
       <ElFormItem>
         <ElCheckbox v-model="completeForm.createNextAppointment">
-          Create next appointment after submit
+          {{ t('appointments.createNextAppointment') }}
         </ElCheckbox>
       </ElFormItem>
     </ElForm>
     <template #footer>
-      <ElButton @click="closeDialog">Cancel</ElButton>
-      <ElButton type="primary" :disabled="completeFormInvalid" @click="emit('submit')">Submit Complete</ElButton>
+      <ElButton @click="closeDialog">{{ t('common.cancel') }}</ElButton>
+      <ElButton type="primary" :disabled="completeFormInvalid" @click="emit('submit')">{{ t('appointments.submitComplete') }}</ElButton>
     </template>
   </ElDialog>
 </template>

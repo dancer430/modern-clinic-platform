@@ -1,5 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import type { AppointmentStatus } from '../types'
+
+const { t } = useI18n()
 
 defineProps<{
   search: string
@@ -18,7 +22,7 @@ const emit = defineEmits<{
   <section class="filters filters-inline appointments-filters">
     <ElInput
       :model-value="search"
-      placeholder="Search patient/doctor/reason"
+      :placeholder="t('appointments.searchPlaceholder')"
       clearable
       style="width: 280px;"
       @update:model-value="(value) => emit('update:search', value || '')"
@@ -29,13 +33,13 @@ const emit = defineEmits<{
       style="width: 160px;"
       @update:model-value="(value) => emit('update:status', value)"
     >
-      <ElOption label="All status" value="all" />
-      <ElOption label="pending" value="pending" />
-      <ElOption label="confirmed" value="confirmed" />
-      <ElOption label="completed" value="completed" />
-      <ElOption label="cancelled" value="cancelled" />
+      <ElOption :label="t('appointments.allStatus')" value="all" />
+      <ElOption :label="t('status.pending')" value="pending" />
+      <ElOption :label="t('status.confirmed')" value="confirmed" />
+      <ElOption :label="t('status.completed')" value="completed" />
+      <ElOption :label="t('status.cancelled')" value="cancelled" />
     </ElSelect>
-    <ElButton type="primary" @click="emit('search')">Search</ElButton>
-    <ElButton :disabled="!search && status === 'all'" @click="emit('reset')">Reset</ElButton>
+    <ElButton type="primary" @click="emit('search')">{{ t('common.search') }}</ElButton>
+    <ElButton :disabled="!search && status === 'all'" @click="emit('reset')">{{ t('common.reset') }}</ElButton>
   </section>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElButton, ElCheckbox, ElForm, ElFormItem, ElInput, ElMessage, ElRadio, ElRadioGroup, ElSwitch } from 'element-plus'
 import RichTextEditor from '@/shared/components/RichTextEditor.vue'
 import PublishStatusBadge from '../../components/PublishStatusBadge.vue'
@@ -8,6 +9,7 @@ import { adminDepartmentsApi } from '../../api/departments'
 import { adminDoctorProfilesApi } from '../../api/doctor-profiles'
 import type { AssignmentItem, DepartmentCard, DoctorProfileAdmin } from '../../types'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const userId = computed(() => Number(route.params.userId))
@@ -56,7 +58,7 @@ const save = async () => {
         is_primary: Number(id) === primaryId.value,
       }))
     await adminDoctorProfilesApi.setDepartments(userId.value, items)
-    ElMessage.success('Saved')
+    ElMessage.success(t('admin.saved'))
     await loadAll()
   } finally {
     saving.value = false
@@ -71,28 +73,28 @@ onMounted(loadAll)
     <header class="admin-page__header">
       <h1>{{ profile.name }} ({{ profile.username }})</h1>
       <PublishStatusBadge :status="profile.draft_status" :published="profile.is_published" />
-      <ElButton @click="router.push('/admin/doctor-profiles')">Back</ElButton>
+      <ElButton @click="router.push('/admin/doctor-profiles')">{{ t('common.back') }}</ElButton>
     </header>
     <ElForm label-position="top" class="admin-form">
-      <ElFormItem label="Title"><ElInput v-model="profile.title" /></ElFormItem>
-      <ElFormItem label="Specialty"><ElInput v-model="profile.specialty" /></ElFormItem>
-      <ElFormItem label="Published bio (live)"><RichTextEditor v-model="profile.bio_published_html" /></ElFormItem>
-      <ElFormItem label="Draft bio"><RichTextEditor v-model="profile.bio_draft_html" /></ElFormItem>
-      <ElFormItem label="Published"><ElSwitch v-model="profile.is_published" /></ElFormItem>
-      <ElFormItem label="Departments">
+      <ElFormItem :label="t('admin.title')"><ElInput v-model="profile.title" /></ElFormItem>
+      <ElFormItem :label="t('admin.specialty')"><ElInput v-model="profile.specialty" /></ElFormItem>
+      <ElFormItem :label="t('admin.publishedBioLive')"><RichTextEditor v-model="profile.bio_published_html" /></ElFormItem>
+      <ElFormItem :label="t('admin.draftBio')"><RichTextEditor v-model="profile.bio_draft_html" /></ElFormItem>
+      <ElFormItem :label="t('admin.published')"><ElSwitch v-model="profile.is_published" /></ElFormItem>
+      <ElFormItem :label="t('admin.departmentsColumn')">
         <div class="dept-grid">
           <div v-for="d in departments" :key="d.id" class="dept-row">
             <ElCheckbox v-model="assignments[d.id].selected">{{ d.name }}</ElCheckbox>
           </div>
         </div>
       </ElFormItem>
-      <ElFormItem label="Primary department">
+      <ElFormItem :label="t('admin.primaryDepartment')">
         <ElRadioGroup v-model="primaryId">
           <ElRadio v-for="d in departments.filter((x) => assignments[x.id].selected)" :key="d.id" :label="d.id">{{ d.name }}</ElRadio>
         </ElRadioGroup>
       </ElFormItem>
       <div class="admin-form__actions">
-        <ElButton type="primary" :loading="saving" @click="save">Save</ElButton>
+        <ElButton type="primary" :loading="saving" @click="save">{{ t('common.save') }}</ElButton>
       </div>
     </ElForm>
   </section>

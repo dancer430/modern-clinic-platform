@@ -6,7 +6,11 @@ import CancelAppointmentDialog from '../components/CancelAppointmentDialog.vue'
 import CompleteAppointmentDialog from '../components/CompleteAppointmentDialog.vue'
 import ConfirmAppointmentDialog from '../components/ConfirmAppointmentDialog.vue'
 import CreateAppointmentDialog from '../components/CreateAppointmentDialog.vue'
+import { useI18n } from 'vue-i18n'
+
 import { useAppointmentsPage } from '../composables/useAppointmentsPage'
+
+const { t } = useI18n()
 
 const {
   applyListFilters,
@@ -60,10 +64,10 @@ const {
   <div class="page">
     <section class="toolbar">
       <div>
-        <h2>Appointments</h2>
-        <p>Limited slots: 08:00-11:30 and 14:00-17:00 (every 30 minutes).</p>
+        <h2>{{ t('appointments.title') }}</h2>
+        <p>{{ t('appointments.slotsHint') }}</p>
       </div>
-      <ElButton type="primary" @click="openCreate">+ New Appointment</ElButton>
+      <ElButton type="primary" @click="openCreate">{{ t('appointments.newAppointment') }}</ElButton>
     </section>
 
     <AppointmentsFilters

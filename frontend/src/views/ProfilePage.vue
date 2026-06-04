@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import httpClient from '@/shared/http'
 import { useAuthStore } from '@/features/auth'
 import { usePlatformBrand } from '@/composables/usePlatformBrand'
+
+const { t } = useI18n()
 
 const authStore = useAuthStore()
 const loading = ref(false)
@@ -42,7 +45,7 @@ const passwordStrength = computed(() => {
   if (!password) {
     return {
       score: 0,
-      label: 'Not set',
+      label: t('profile.strengthNotSet'),
       percent: 0,
       tone: 'none',
     }
@@ -54,10 +57,10 @@ const passwordStrength = computed(() => {
   if (/\d/.test(password)) score += 1
   if (/[^A-Za-z0-9]/.test(password)) score += 1
 
-  if (score <= 1) return { score, label: 'Weak', percent: 25, tone: 'weak' }
-  if (score === 2) return { score, label: 'Medium', percent: 50, tone: 'medium' }
-  if (score === 3) return { score, label: 'Strong', percent: 75, tone: 'strong' }
-  return { score, label: 'Very strong', percent: 100, tone: 'very-strong' }
+  if (score <= 1) return { score, label: t('profile.strengthWeak'), percent: 25, tone: 'weak' }
+  if (score === 2) return { score, label: t('profile.strengthMedium'), percent: 50, tone: 'medium' }
+  if (score === 3) return { score, label: t('profile.strengthStrong'), percent: 75, tone: 'strong' }
+  return { score, label: t('profile.strengthVeryStrong'), percent: 100, tone: 'very-strong' }
 })
 
 const strengthColor = computed(() => {
@@ -70,7 +73,7 @@ const strengthColor = computed(() => {
 })
 
 const displayName = computed(() => {
-  return profileForm.value.name.trim() || authStore.user?.username || 'User'
+  return profileForm.value.name.trim() || authStore.user?.username || t('profile.defaultUser')
 })
 
 const isAdmin = computed(() => authStore.isAdmin)
@@ -90,7 +93,7 @@ const loadProfile = async () => {
       avatar_size: user.avatar_size ?? null,
     }
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to load profile')
+    ElMessage.error(error.response?.data?.detail || t('profile.profileLoadFailed'))
   } finally {
     loading.value = false
   }
@@ -114,13 +117,13 @@ const loadPlatform = async () => {
 const processAvatarFile = async (file: File) => {
   const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
   if (!allowedTypes.includes(file.type)) {
-    ElMessage.error('Avatar must be PNG or JPG')
+    ElMessage.error(t('profile.avatarMustBeImage'))
     return
   }
 
   const sizeKB = Math.ceil(file.size / 1024)
   if (sizeKB > 1024) {
-    ElMessage.error('Avatar size must be <= 1MB')
+    ElMessage.error(t('profile.avatarTooLarge'))
     return
   }
 
@@ -155,13 +158,13 @@ const removeAvatar = () => {
 const processPlatformLogoFile = async (file: File) => {
   const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg']
   if (!allowedTypes.includes(file.type)) {
-    ElMessage.error('Platform logo must be PNG or JPG')
+    ElMessage.error(t('profile.logoMustBeImage'))
     return
   }
 
   const sizeKB = Math.ceil(file.size / 1024)
   if (sizeKB > 1024) {
-    ElMessage.error('Platform logo size must be <= 1MB')
+    ElMessage.error(t('profile.logoTooLarge'))
     return
   }
 
@@ -197,9 +200,9 @@ const savePlatform = async () => {
   try {
     await httpClient.patch('/api/auth/platform/', platformForm.value)
     await loadPlatformBrand(true)
-    ElMessage.success('Platform branding updated successfully')
+    ElMessage.success(t('profile.brandingUpdated'))
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to update platform branding')
+    ElMessage.error(error.response?.data?.detail || t('profile.brandingUpdateFailed'))
   }
 }
 
@@ -207,9 +210,9 @@ const saveProfile = async () => {
   try {
     const response = await httpClient.patch('/api/auth/me/', profileForm.value)
     authStore.setUser(response.data)
-    ElMessage.success('Profile updated successfully')
+    ElMessage.success(t('profile.profileUpdated'))
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to update profile')
+    ElMessage.error(error.response?.data?.detail || t('profile.profileUpdateFailed'))
   }
 }
 
@@ -217,7 +220,7 @@ const changePassword = async () => {
   passwordSubmitAttempted.value = true
 
   if (!passwordForm.value.current_password || !passwordForm.value.new_password || !passwordForm.value.confirm_password) {
-    ElMessage.error('Please complete all password fields')
+    ElMessage.error(t('profile.completeAllPasswordFields'))
     return
   }
 
@@ -229,9 +232,9 @@ const changePassword = async () => {
       confirm_password: '',
     }
     passwordSubmitAttempted.value = false
-    ElMessage.success('Password updated successfully')
+    ElMessage.success(t('profile.passwordUpdated'))
   } catch (error: any) {
-    ElMessage.error(error.response?.data?.detail || 'Failed to update password')
+    ElMessage.error(error.response?.data?.detail || t('profile.passwordUpdateFailed'))
   }
 }
 
@@ -244,15 +247,15 @@ onMounted(async () => {
   <div class="page profile-page" v-loading="loading">
     <section class="toolbar">
       <div>
-        <h2>Personal Center</h2>
-        <p>Manage your contact details, avatar, and password.</p>
+        <h2>{{ t('profile.title') }}</h2>
+        <p>{{ t('profile.subtitle') }}</p>
       </div>
     </section>
 
     <section class="profile-grid">
       <el-card shadow="never">
         <template #header>
-          <span>Profile</span>
+          <span>{{ t('profile.profileCard') }}</span>
         </template>
 
         <div class="profile-avatar-row">
@@ -272,54 +275,54 @@ onMounted(async () => {
             >
               <div class="upload-trigger">
                 <el-icon><Plus /></el-icon>
-                <span>Upload avatar</span>
+                <span>{{ t('profile.uploadAvatar') }}</span>
               </div>
             </el-upload>
-            <el-button text @click="removeAvatar">Remove avatar</el-button>
+            <el-button text @click="removeAvatar">{{ t('profile.removeAvatar') }}</el-button>
           </div>
         </div>
 
         <el-form label-position="top">
-          <el-form-item label="Name">
-            <el-input v-model="profileForm.name" placeholder="Name" />
+          <el-form-item :label="t('profile.fieldName')">
+            <el-input v-model="profileForm.name" :placeholder="t('profile.placeholderName')" />
           </el-form-item>
-          <el-form-item label="Email">
-            <el-input v-model="profileForm.email" placeholder="Email" />
+          <el-form-item :label="t('profile.fieldEmail')">
+            <el-input v-model="profileForm.email" :placeholder="t('profile.placeholderEmail')" />
           </el-form-item>
-          <el-form-item label="Phone">
-            <el-input v-model="profileForm.phone" placeholder="Phone" />
+          <el-form-item :label="t('profile.fieldPhone')">
+            <el-input v-model="profileForm.phone" :placeholder="t('profile.placeholderPhone')" />
           </el-form-item>
         </el-form>
 
         <div class="actions">
-          <el-button type="primary" :disabled="loading" @click="saveProfile">Save Profile</el-button>
+          <el-button type="primary" :disabled="loading" @click="saveProfile">{{ t('profile.saveProfile') }}</el-button>
         </div>
       </el-card>
 
       <el-card shadow="never">
         <template #header>
-          <span>Change Password</span>
+          <span>{{ t('profile.changePassword') }}</span>
         </template>
 
-        <p class="password-card-tip">Use a strong password and keep your account secure.</p>
+        <p class="password-card-tip">{{ t('profile.passwordTip') }}</p>
 
         <el-form label-position="top">
-          <el-form-item label="Current Password" required>
+          <el-form-item :label="t('profile.currentPassword')" required>
             <el-input
               v-model="passwordForm.current_password"
               type="password"
               show-password
-              placeholder="Enter current password"
+              :placeholder="t('profile.enterCurrentPassword')"
               :class="{ 'is-error': passwordSubmitAttempted && !passwordForm.current_password }"
             />
           </el-form-item>
 
-          <el-form-item label="New Password" required>
+          <el-form-item :label="t('profile.newPassword')" required>
             <el-input
               v-model="passwordForm.new_password"
               type="password"
               show-password
-              placeholder="Enter new password"
+              :placeholder="t('profile.enterNewPassword')"
               :class="{ 'is-error': passwordSubmitAttempted && !passwordForm.new_password }"
             />
           </el-form-item>
@@ -332,31 +335,31 @@ onMounted(async () => {
               :show-text="false"
               striped
             />
-            <span class="password-strength-text">Strength: {{ passwordStrength.label }}</span>
+            <span class="password-strength-text">{{ t('profile.strengthPrefix') }} {{ passwordStrength.label }}</span>
           </div>
 
-          <el-form-item label="Confirm New Password" required>
+          <el-form-item :label="t('profile.confirmNewPassword')" required>
             <el-input
               v-model="passwordForm.confirm_password"
               type="password"
               show-password
-              placeholder="Re-enter new password"
+              :placeholder="t('profile.reenterNewPassword')"
               :class="{ 'is-error': passwordSubmitAttempted && !passwordForm.confirm_password }"
             />
           </el-form-item>
         </el-form>
 
         <div class="actions">
-          <el-button type="primary" @click="changePassword">Update Password</el-button>
+          <el-button type="primary" @click="changePassword">{{ t('profile.updatePassword') }}</el-button>
         </div>
       </el-card>
 
       <el-card v-if="isAdmin" shadow="never">
         <template #header>
-          <span>Platform Branding</span>
+          <span>{{ t('profile.platformBranding') }}</span>
         </template>
 
-        <p class="password-card-tip">Admin-only: customize platform name and logo shown in login and sidebar.</p>
+        <p class="password-card-tip">{{ t('profile.platformBrandingTip') }}</p>
 
         <div class="profile-avatar-row">
           <div class="profile-avatar-preview">
@@ -375,21 +378,21 @@ onMounted(async () => {
             >
               <div class="upload-trigger">
                 <el-icon><Plus /></el-icon>
-                <span>Upload platform logo</span>
+                <span>{{ t('profile.uploadPlatformLogo') }}</span>
               </div>
             </el-upload>
-            <el-button text @click="removePlatformLogo">Remove logo</el-button>
+            <el-button text @click="removePlatformLogo">{{ t('profile.removeLogo') }}</el-button>
           </div>
         </div>
 
         <el-form label-position="top">
-          <el-form-item label="Platform Name">
-            <el-input v-model="platformForm.platform_name" placeholder="Platform name" />
+          <el-form-item :label="t('profile.platformName')">
+            <el-input v-model="platformForm.platform_name" :placeholder="t('profile.placeholderPlatformName')" />
           </el-form-item>
         </el-form>
 
         <div class="actions">
-          <el-button type="primary" @click="savePlatform">Save Branding</el-button>
+          <el-button type="primary" @click="savePlatform">{{ t('profile.saveBranding') }}</el-button>
         </div>
       </el-card>
     </section>
