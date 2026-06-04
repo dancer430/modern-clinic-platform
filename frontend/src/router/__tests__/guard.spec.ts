@@ -12,6 +12,7 @@ const messageWarningMock = vi.mocked(ElMessage.warning)
 
 import { useAuthStore } from '@/features/auth'
 import { beforeEachGuard } from '../index'
+import router from '@/router'
 import type { RouteLocationNormalized } from 'vue-router'
 
 const buildRoute = (path: string, meta: Record<string, unknown> = {}): RouteLocationNormalized =>
@@ -95,5 +96,13 @@ describe('beforeEachGuard', () => {
       next,
     )
     expect(next).toHaveBeenCalledWith()
+  })
+
+  it('gates /doctors and /patients to admin only', () => {
+    const routes = router.getRoutes()
+    const doctors = routes.find((r) => r.name === 'doctors')
+    const patients = routes.find((r) => r.name === 'patients')
+    expect(doctors?.meta.roles).toEqual(['admin'])
+    expect(patients?.meta.roles).toEqual(['admin'])
   })
 })

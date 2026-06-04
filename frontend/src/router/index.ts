@@ -18,6 +18,9 @@ declare module 'vue-router' {
 
 const ROLES_ALL: Array<Role> = ['admin', 'doctor', 'patient']
 const ROLES_STAFF: Array<Role> = ['admin', 'doctor']
+const ROLES_ADMIN: Array<Role> = ['admin']
+const ROLES_DOCTOR: Array<Role> = ['doctor']
+const ROLES_PATIENT: Array<Role> = ['patient']
 
 const router = createRouter({
   history: createWebHistory(),
@@ -63,13 +66,13 @@ const router = createRouter({
       path: '/patients',
       name: 'patients',
       component: () => import('@/views/PatientsPage.vue'),
-      meta: { requiresAuth: true, roles: ROLES_ALL },
+      meta: { requiresAuth: true, roles: ROLES_ADMIN },
     },
     {
       path: '/doctors',
       name: 'doctors',
       component: () => import('@/views/DoctorsPage.vue'),
-      meta: { requiresAuth: true, roles: ROLES_ALL },
+      meta: { requiresAuth: true, roles: ROLES_ADMIN },
     },
     {
       path: '/appointments',
