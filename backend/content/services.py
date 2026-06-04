@@ -118,12 +118,16 @@ def approve_doctor_profile(profile: DoctorProfile) -> DoctorProfile:
         raise DraftConflictError(f"cannot approve when status is {profile.draft_status}")
     profile.bio_published_html = profile.bio_draft_html
     profile.draft_status = DoctorProfile.DraftStatus.APPROVED
+    # Approving publishes the profile so it surfaces on the public portal
+    # (the portal queries filter on is_published=True).
+    profile.is_published = True
     profile.draft_reviewed_at = timezone.now()
     profile.draft_review_note = ""
     profile.save(
         update_fields=[
             "bio_published_html",
             "draft_status",
+            "is_published",
             "draft_reviewed_at",
             "draft_review_note",
             "updated_at",

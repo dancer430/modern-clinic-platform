@@ -44,6 +44,8 @@ def test_approve_copies_draft_to_published(doctor_user):
     assert p.bio_published_html == "<p>new</p>"
     assert p.draft_status == DoctorProfile.DraftStatus.APPROVED
     assert p.draft_reviewed_at is not None
+    # approving a draft must publish the profile so it appears on the public portal
+    assert p.is_published is True
 
 
 @pytest.mark.django_db

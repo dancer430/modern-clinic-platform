@@ -77,6 +77,7 @@ def test_admin_approve_copies_draft(admin_client, doctor_user):
     p.refresh_from_db()
     assert p.bio_published_html == "<p>new</p>"
     assert p.draft_status == DoctorProfile.DraftStatus.APPROVED
+    assert p.is_published is True
 
 
 @pytest.mark.django_db
