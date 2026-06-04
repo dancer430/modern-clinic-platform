@@ -111,6 +111,9 @@ export default {
   patientHome: {
     title: '首页',
     subtitle: '你的近期预约。',
+    book: '预约挂号',
+    noUpcoming: '暂无近期预约。',
+    upcoming: '近期预约',
   },
   dashboard: {
     title: '今日概览',

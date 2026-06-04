@@ -111,6 +111,9 @@ export default {
   patientHome: {
     title: 'Home',
     subtitle: 'Your upcoming appointments.',
+    book: 'Book an appointment',
+    noUpcoming: 'No upcoming appointments.',
+    upcoming: 'Upcoming appointments',
   },
   dashboard: {
     title: 'Today Operations',

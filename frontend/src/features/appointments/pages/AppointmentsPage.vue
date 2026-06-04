@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import AppointmentsFilters from '../components/AppointmentsFilters.vue'
 import AppointmentsPagination from '../components/AppointmentsPagination.vue'
 import AppointmentsTableCard from '../components/AppointmentsTableCard.vue'
@@ -7,10 +8,16 @@ import CompleteAppointmentDialog from '../components/CompleteAppointmentDialog.v
 import ConfirmAppointmentDialog from '../components/ConfirmAppointmentDialog.vue'
 import CreateAppointmentDialog from '../components/CreateAppointmentDialog.vue'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/features/auth/store'
 
 import { useAppointmentsPage } from '../composables/useAppointmentsPage'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
+
+const pageTitle = computed(() =>
+  authStore.user?.user_type === 'admin' ? t('appointments.titleManage') : t('appointments.titleMine')
+)
 
 const {
   applyListFilters,
@@ -64,7 +71,7 @@ const {
   <div class="page">
     <section class="toolbar">
       <div>
-        <h2>{{ t('appointments.title') }}</h2>
+        <h2>{{ pageTitle }}</h2>
         <p>{{ t('appointments.slotsHint') }}</p>
       </div>
       <ElButton type="primary" @click="openCreate">{{ t('appointments.newAppointment') }}</ElButton>
