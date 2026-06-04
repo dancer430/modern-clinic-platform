@@ -77,6 +77,11 @@ export default {
     completed: 'Completed',
     cancelled: 'Cancelled',
   },
+  role: {
+    admin: 'Admin',
+    doctor: 'Doctor',
+    patient: 'Patient',
+  },
   auth: {
     streamlineTitle: 'Streamline Your Medical Practice',
     streamlineSubtitle: 'Manage doctors, patients, and appointments all in one place.',

@@ -77,6 +77,11 @@ export default {
     completed: '已完成',
     cancelled: '已取消',
   },
+  role: {
+    admin: '管理员',
+    doctor: '医生',
+    patient: '患者',
+  },
   auth: {
     streamlineTitle: '让您的诊疗管理更高效',
     streamlineSubtitle: '医生、患者与预约,一个平台统一管理。',
