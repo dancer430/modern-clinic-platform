@@ -984,10 +984,10 @@ button:disabled {
 .status-legend { display: grid; gap: 7px; }
 .status-legend-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; font-size: 12px; color: #4b5e86; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
-.legend-dot.tone-pending { background: #ed8936; }
-.legend-dot.tone-confirmed { background: #3182ce; }
-.legend-dot.tone-completed { background: #48bb78; }
-.legend-dot.tone-cancelled { background: #c2334a; }
+.legend-dot.tone-pending { background: var(--status-pending-text); }
+.legend-dot.tone-confirmed { background: var(--status-confirmed-text); }
+.legend-dot.tone-completed { background: var(--status-completed-text); }
+.legend-dot.tone-cancelled { background: var(--status-cancelled-text); }
 
 .stat-card.tone-blue { border-color: #cddcf8; background: #f4f8ff; }
 .stat-card.tone-orange { border-color: #f3d7b4; background: #fff8ef; }
@@ -1706,3 +1706,18 @@ button:disabled {
   .day-panel-header-right { justify-items: start; }
   .time-chip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+.status-pill {
+  display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 600;
+  padding: 2px 11px; border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+.status-pill[data-variant='pending']   { background: var(--status-pending-bg);   color: var(--status-pending-text); }
+.status-pill[data-variant='confirmed'] { background: var(--status-confirmed-bg); color: var(--status-confirmed-text); }
+.status-pill[data-variant='completed'] { background: var(--status-completed-bg); color: var(--status-completed-text); }
+.status-pill[data-variant='cancelled'] { background: var(--status-cancelled-bg); color: var(--status-cancelled-text); }
+.status-pill[data-variant='neutral']   { background: var(--status-neutral-bg);   color: var(--status-neutral-text); }
+.status-pill[data-variant='published'] { background: var(--status-completed-bg); color: var(--status-completed-text); }
+.status-pill[data-variant='rejected']  { background: var(--status-cancelled-bg); color: var(--status-cancelled-text); }
+.status-pill[data-variant='draft']     { background: var(--status-neutral-bg);   color: var(--status-neutral-text); }

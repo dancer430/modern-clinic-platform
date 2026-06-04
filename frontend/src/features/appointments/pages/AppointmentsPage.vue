@@ -60,7 +60,6 @@ const {
   showSqliteAttachmentHint,
   slotOptions,
   status,
-  statusTagType,
   submitComplete,
   submitConfirm,
   totalCount,
@@ -89,7 +88,6 @@ const {
     <AppointmentsTableCard
       :loading="loading"
       :appointments="filtered"
-      :status-tag-type="statusTagType"
       :can-confirm="canConfirm"
       :can-complete="canComplete"
       @confirm="openConfirmDialog"

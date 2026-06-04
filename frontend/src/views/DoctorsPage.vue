@@ -41,12 +41,12 @@ function deriveStatus(p?: DoctorProfileAdmin): ProfileStatus {
   return p.title || p.specialty ? 'draft' : 'none'
 }
 
-const statusTagType: Record<ProfileStatus, 'success' | 'warning' | 'info' | 'danger'> = {
-  published: 'success',
-  pending: 'warning',
-  draft: 'info',
-  rejected: 'danger',
-  none: 'info',
+const statusVariant: Record<ProfileStatus, 'completed' | 'pending' | 'neutral' | 'cancelled'> = {
+  published: 'completed',
+  pending: 'pending',
+  draft: 'neutral',
+  rejected: 'cancelled',
+  none: 'neutral',
 }
 
 const authStore = useAuthStore()
@@ -281,9 +281,9 @@ onMounted(async () => {
       </el-table-column>
       <el-table-column :label="t('doctors.columnProfileStatus')" width="130">
         <template #default="{ row }">
-          <el-tag :type="statusTagType[row.profileStatus]" size="small">
+          <span class="status-pill" :data-variant="statusVariant[row.profileStatus]">
             {{ t('doctorStatus.' + row.profileStatus) }}
-          </el-tag>
+          </span>
         </template>
       </el-table-column>
       <el-table-column :label="t('common.actions')" width="180" fixed="right">

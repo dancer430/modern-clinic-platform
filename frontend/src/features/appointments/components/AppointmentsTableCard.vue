@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
+import StatusBadge from '@/shared/components/StatusBadge.vue'
 import type { AppointmentItem } from '../types'
 
 const { t } = useI18n()
@@ -8,7 +9,6 @@ const { t } = useI18n()
 defineProps<{
   loading: boolean
   appointments: AppointmentItem[]
-  statusTagType: (status: AppointmentItem['status']) => string
   canConfirm: (item: AppointmentItem) => boolean
   canComplete: (item: AppointmentItem) => boolean
 }>()
@@ -36,7 +36,7 @@ const emit = defineEmits<{
       </ElTableColumn>
       <ElTableColumn :label="t('appointments.colStatus')" width="130">
         <template #default="{ row }">
-          <ElTag :type="statusTagType(row.status)" size="small">{{ t('status.' + row.status) }}</ElTag>
+          <StatusBadge kind="appointment" :status="row.status" />
         </template>
       </ElTableColumn>
       <ElTableColumn :label="t('common.actions')" width="220">

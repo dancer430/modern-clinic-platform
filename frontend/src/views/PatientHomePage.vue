@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import httpClient from '@/shared/http'
+import StatusBadge from '@/shared/components/StatusBadge.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -46,16 +47,6 @@ const upcomingAppointments = computed(() =>
       return aKey.localeCompare(bKey)
     })
 )
-
-const statusTagType = (status: AppointmentStatus): '' | 'success' | 'warning' | 'danger' | 'info' => {
-  const map: Record<AppointmentStatus, '' | 'success' | 'warning' | 'danger' | 'info'> = {
-    pending: 'warning',
-    confirmed: '',
-    completed: 'success',
-    cancelled: 'danger',
-  }
-  return map[status]
-}
 
 const fetchAppointments = async () => {
   loading.value = true
@@ -108,9 +99,7 @@ onMounted(async () => {
               <strong>{{ item.doctor_name }}</strong>
               <span>{{ item.appointment_date }} · {{ item.appointment_time.slice(0, 5) }}</span>
             </div>
-            <el-tag :type="statusTagType(item.status)" size="small">
-              {{ t(`status.${item.status}`) }}
-            </el-tag>
+            <StatusBadge kind="appointment" :status="item.status" />
           </li>
         </ul>
       </template>
