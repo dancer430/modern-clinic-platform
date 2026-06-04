@@ -50,6 +50,10 @@ export default {
     logout: '退出登录',
     workspace: '工作区',
     demoUser: '演示用户',
+    home: '首页',
+    myAppointments: '我的预约',
+    findDoctor: '找医生 · 科室',
+    profile: '个人中心',
   },
   pageTitle: {
     login: '登录',
@@ -70,6 +74,8 @@ export default {
     'portal-department-detail': '科室',
     'portal-doctor-list': '医生',
     'portal-doctor-detail': '医生',
+    'patient-home': '首页',
+    'doctor-detail': '医生',
   },
   status: {
     pending: '待确认',
@@ -97,6 +103,10 @@ export default {
     pleaseEnterUsername: '请输入用户名或邮箱',
     pleaseEnterPassword: '请输入密码',
     loginFailed: '登录失败',
+  },
+  patientHome: {
+    title: '首页',
+    subtitle: '你的近期预约。',
   },
   dashboard: {
     title: '今日概览',

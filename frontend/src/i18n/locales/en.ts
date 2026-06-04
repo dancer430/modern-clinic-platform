@@ -50,6 +50,10 @@ export default {
     logout: 'Logout',
     workspace: 'Workspace',
     demoUser: 'demo_user',
+    home: 'Home',
+    myAppointments: 'My Appointments',
+    findDoctor: 'Find a doctor',
+    profile: 'Profile',
   },
   pageTitle: {
     login: 'Sign In',
@@ -70,6 +74,8 @@ export default {
     'portal-department-detail': 'Department',
     'portal-doctor-list': 'Doctors',
     'portal-doctor-detail': 'Doctor',
+    'patient-home': 'Home',
+    'doctor-detail': 'Doctor',
   },
   status: {
     pending: 'Pending',
@@ -97,6 +103,10 @@ export default {
     pleaseEnterUsername: 'Please enter username or email',
     pleaseEnterPassword: 'Please enter password',
     loginFailed: 'Login failed',
+  },
+  patientHome: {
+    title: 'Home',
+    subtitle: 'Your upcoming appointments.',
   },
   dashboard: {
     title: 'Today Operations',
