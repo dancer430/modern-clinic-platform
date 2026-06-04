@@ -75,6 +75,18 @@ const router = createRouter({
       meta: { requiresAuth: true, roles: ROLES_ADMIN },
     },
     {
+      path: '/home',
+      name: 'patient-home',
+      component: () => import('@/views/PatientHomePage.vue'),
+      meta: { requiresAuth: true, roles: ROLES_PATIENT },
+    },
+    {
+      path: '/doctors/:id',
+      name: 'doctor-detail',
+      component: () => import('@/features/content/pages/admin/DoctorDetailPage.vue'),
+      meta: { requiresAuth: true, roles: ROLES_ADMIN },
+    },
+    {
       path: '/appointments',
       name: 'appointments',
       component: () => import('@/features/appointments/pages/AppointmentsPage.vue'),
@@ -110,24 +122,9 @@ const router = createRouter({
       component: () => import('@/features/content/pages/admin/AdminDepartmentEdit.vue'),
       meta: { requiresAuth: true, roles: ['admin'] },
     },
-    {
-      path: '/admin/doctor-profiles',
-      name: 'admin-doctor-profile-list',
-      component: () => import('@/features/content/pages/admin/AdminDoctorProfileList.vue'),
-      meta: { requiresAuth: true, roles: ['admin'] },
-    },
-    {
-      path: '/admin/doctor-profiles/:userId',
-      name: 'admin-doctor-profile-edit',
-      component: () => import('@/features/content/pages/admin/AdminDoctorProfileEdit.vue'),
-      meta: { requiresAuth: true, roles: ['admin'] },
-    },
-    {
-      path: '/admin/reviews',
-      name: 'admin-pending-reviews',
-      component: () => import('@/features/content/pages/admin/AdminPendingReviews.vue'),
-      meta: { requiresAuth: true, roles: ['admin'] },
-    },
+    { path: '/admin/doctor-profiles', redirect: '/doctors' },
+    { path: '/admin/doctor-profiles/:userId', redirect: (to) => `/doctors/${to.params.userId}` },
+    { path: '/admin/reviews', redirect: '/doctors' },
     {
       path: '/doctor/profile',
       name: 'doctor-my-profile',
