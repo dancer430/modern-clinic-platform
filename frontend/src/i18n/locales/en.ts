@@ -4,6 +4,7 @@ import { en as portalEn } from './fragments/portal'
 import { en as adminEn } from './fragments/admin'
 import { en as doctorProfileEn } from './fragments/doctor-profile'
 import { en as doctorStatusEn } from './fragments/doctor-status'
+import { en as doctorDetailEn } from './fragments/doctor-detail'
 
 export default {
   ...appointmentsEn,
@@ -12,6 +13,7 @@ export default {
   ...adminEn,
   ...doctorProfileEn,
   ...doctorStatusEn,
+  ...doctorDetailEn,
   common: {
     appName: 'Medical Booking Platform',
     actions: 'Actions',

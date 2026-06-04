@@ -4,6 +4,7 @@ import { zh as portalZh } from './fragments/portal'
 import { zh as adminZh } from './fragments/admin'
 import { zh as doctorProfileZh } from './fragments/doctor-profile'
 import { zh as doctorStatusZh } from './fragments/doctor-status'
+import { zh as doctorDetailZh } from './fragments/doctor-detail'
 
 export default {
   ...appointmentsZh,
@@ -12,6 +13,7 @@ export default {
   ...adminZh,
   ...doctorProfileZh,
   ...doctorStatusZh,
+  ...doctorDetailZh,
   common: {
     appName: '医疗预约平台',
     actions: '操作',
