@@ -108,8 +108,8 @@ watch(
             <template v-else>{{ authStore.user?.name?.[0] || authStore.user?.username?.[0] || 'U' }}</template>
           </span>
           <div class="user-meta">
-            <strong>{{ authStore.user?.username || t('nav.demoUser') }}</strong>
-            <span>{{ authStore.user?.user_type || 'admin' }}</span>
+            <strong>{{ authStore.user?.name || authStore.user?.username || t('nav.demoUser') }}</strong>
+            <span>{{ authStore.user?.user_type ? t(`role.${authStore.user.user_type}`) : '' }}</span>
           </div>
           <el-button class="footer-logout" :title="t('nav.logout')" :aria-label="t('nav.logout')" @click.stop="handleLogout">
             <el-icon><SwitchButton /></el-icon>
