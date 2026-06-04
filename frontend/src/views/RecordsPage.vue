@@ -222,7 +222,7 @@ onMounted(async () => {
         <template #header>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin: 0;">{{ item.patient_name }}</h3>
-            <StatusBadge kind="appointment" status="completed" />
+            <StatusBadge status="completed" />
           </div>
         </template>
         <p><strong>{{ t('records.cardDoctor') }}</strong> {{ item.doctor_name }}</p>

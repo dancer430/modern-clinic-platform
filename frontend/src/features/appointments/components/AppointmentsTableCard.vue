@@ -36,7 +36,7 @@ const emit = defineEmits<{
       </ElTableColumn>
       <ElTableColumn :label="t('appointments.colStatus')" width="130">
         <template #default="{ row }">
-          <StatusBadge kind="appointment" :status="row.status" />
+          <StatusBadge :status="row.status" />
         </template>
       </ElTableColumn>
       <ElTableColumn :label="t('common.actions')" width="220">

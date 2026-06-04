@@ -99,7 +99,7 @@ onMounted(async () => {
               <strong>{{ item.doctor_name }}</strong>
               <span>{{ item.appointment_date }} · {{ item.appointment_time.slice(0, 5) }}</span>
             </div>
-            <StatusBadge kind="appointment" :status="item.status" />
+            <StatusBadge :status="item.status" />
           </li>
         </ul>
       </template>

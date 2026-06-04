@@ -204,7 +204,7 @@ onMounted(async () => {
                 <strong>{{ item.patient_name }}</strong>
                 <span>{{ item.doctor_name }} · {{ item.appointment_time.slice(0, 5) }}</span>
               </div>
-              <StatusBadge kind="appointment" :status="item.status" />
+              <StatusBadge :status="item.status" />
             </li>
           </ul>
           <el-empty v-else :description="t('dashboard.noUpcoming')" :image-size="80" />
