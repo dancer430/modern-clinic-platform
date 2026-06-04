@@ -54,7 +54,7 @@ describe('beforeEachGuard', () => {
     expect(next).toHaveBeenCalledWith('/dashboard')
   })
 
-  it('rejects role mismatch back to /dashboard with a toast', () => {
+  it('rejects role mismatch: patient hitting staff route is redirected to /home with a toast', () => {
     const auth = useAuthStore()
     auth.token = 'tok'
     auth.user = { id: 2, username: 'p', email: 'p', name: 'p', user_type: 'patient', phone: '' }
@@ -65,8 +65,33 @@ describe('beforeEachGuard', () => {
       buildRoute('/dashboard'),
       next,
     )
-    expect(next).toHaveBeenCalledWith('/dashboard')
+    expect(next).toHaveBeenCalledWith('/home')
     expect(messageWarningMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('patient hitting /dashboard is redirected to /home', () => {
+    const auth = useAuthStore()
+    auth.token = 'tok'
+    auth.user = { id: 5, username: 'pat', email: 'pat', name: 'pat', user_type: 'patient', phone: '' }
+
+    const next = vi.fn()
+    beforeEachGuard(
+      buildRoute('/dashboard', { requiresAuth: true, roles: ['admin', 'doctor'] }),
+      buildRoute('/home'),
+      next,
+    )
+    expect(next).toHaveBeenCalledWith('/home')
+    expect(messageWarningMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('authenticated patient on /login is redirected to /home', () => {
+    const auth = useAuthStore()
+    auth.token = 'tok'
+    auth.user = { id: 6, username: 'pat2', email: 'pat2', name: 'pat2', user_type: 'patient', phone: '' }
+
+    const next = vi.fn()
+    beforeEachGuard(buildRoute('/login', { requiresAuth: false }), buildRoute('/'), next)
+    expect(next).toHaveBeenCalledWith('/home')
   })
 
   it('passes role match through', () => {

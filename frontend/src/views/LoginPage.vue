@@ -37,7 +37,7 @@ const login = async () => {
   loading.value = false
 
   if (result.success) {
-    router.push('/dashboard')
+    router.push(authStore.user?.user_type === 'patient' ? '/home' : '/dashboard')
     return
   }
 
