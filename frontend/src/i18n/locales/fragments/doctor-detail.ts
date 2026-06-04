@@ -23,7 +23,6 @@ export const en = {
     fieldDepartments: 'Departments',
     fieldPrimaryDepartment: 'Primary department',
     fieldBio: 'Bio',
-    fieldPublished: 'Published',
     titlePlaceholder: 'e.g. Senior Consultant',
     specialtyPlaceholder: 'e.g. Cardiology',
     profileSaved: 'Profile saved',
@@ -41,7 +40,6 @@ export const en = {
     reviewActionFailed: 'Review action failed',
     // Loading / error
     loadFailed: 'Failed to load doctor',
-    notFound: 'Doctor not found',
   },
 }
 
@@ -70,7 +68,6 @@ export const zh = {
     fieldDepartments: '所属科室',
     fieldPrimaryDepartment: '主科室',
     fieldBio: '简介',
-    fieldPublished: '已发布',
     titlePlaceholder: '例如：高级顾问医师',
     specialtyPlaceholder: '例如：心血管科',
     profileSaved: '主页已保存',
@@ -88,6 +85,5 @@ export const zh = {
     reviewActionFailed: '审核操作失败',
     // Loading / error
     loadFailed: '加载医生信息失败',
-    notFound: '未找到该医生',
   },
 }

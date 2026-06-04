@@ -158,7 +158,6 @@ const saveProfile = async () => {
       specialty: profile.value.specialty,
       bio_draft_html: profile.value.bio_draft_html,
       bio_published_html: profile.value.bio_published_html,
-      is_published: profile.value.is_published,
     })
     if (assignmentKey() !== initialAssignmentKey.value) {
       const items: AssignmentItem[] = selectedDepartments.value.map((d) => ({
@@ -215,6 +214,8 @@ const reject = async () => {
     reviewActing.value = false
   }
 }
+
+const fmtTime = (s?: string | null) => (s ? new Date(s).toLocaleString() : '')
 
 onMounted(loadAll)
 </script>
@@ -286,7 +287,7 @@ onMounted(loadAll)
             <div class="review-card__head">
               <strong>{{ t('doctorDetail.reviewTitle') }}</strong>
               <span v-if="profile.draft_submitted_at" class="review-card__meta">
-                {{ t('doctorDetail.reviewSubmittedAt') }}: {{ profile.draft_submitted_at }}
+                {{ t('doctorDetail.reviewSubmittedAt') }}: {{ fmtTime(profile.draft_submitted_at) }}
               </span>
             </div>
             <div class="review-card__label">{{ t('doctorDetail.reviewDraftPreview') }}</div>
@@ -331,9 +332,6 @@ onMounted(loadAll)
             </ElFormItem>
             <ElFormItem :label="t('doctorDetail.fieldBio')">
               <RichTextEditor v-model="profile.bio_draft_html" />
-            </ElFormItem>
-            <ElFormItem :label="t('doctorDetail.fieldPublished')">
-              <ElSwitch v-model="profile.is_published" />
             </ElFormItem>
             <div class="detail-form__actions">
               <ElButton type="primary" :loading="savingProfile" @click="saveProfile">
