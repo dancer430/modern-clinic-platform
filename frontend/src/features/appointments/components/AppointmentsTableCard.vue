@@ -25,6 +25,7 @@ const emit = defineEmits<{
     <ElTable
       v-loading="loading"
       :data="appointments"
+      stripe
       style="width: 100%;"
     >
       <ElTableColumn prop="patient_name" :label="t('appointments.colPatient')" />

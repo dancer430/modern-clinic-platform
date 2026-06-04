@@ -230,7 +230,7 @@ onMounted(async () => {
 <template>
   <div class="page">
     <section class="toolbar">
-      <div>
+      <div class="page-header">
         <h2>{{ t('doctors.title') }}</h2>
         <p>{{ t('doctors.countSummary', { count: filteredDoctors.length }) }}</p>
       </div>

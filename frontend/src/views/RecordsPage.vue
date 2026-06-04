@@ -159,7 +159,7 @@ onMounted(async () => {
 <template>
   <div class="page" v-loading="loading">
     <section class="toolbar">
-      <div>
+      <div class="page-header">
         <h2>{{ t('records.title') }}</h2>
         <p>{{ t('records.subtitle') }}</p>
       </div>

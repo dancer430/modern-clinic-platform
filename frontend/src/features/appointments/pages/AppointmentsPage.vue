@@ -69,7 +69,7 @@ const {
 <template>
   <div class="page">
     <section class="toolbar">
-      <div>
+      <div class="page-header">
         <h2>{{ pageTitle }}</h2>
         <p>{{ t('appointments.slotsHint') }}</p>
       </div>

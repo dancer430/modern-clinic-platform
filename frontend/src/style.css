@@ -1721,3 +1721,18 @@ button:disabled {
 .status-pill[data-variant='published'] { background: var(--status-completed-bg); color: var(--status-completed-text); }
 .status-pill[data-variant='rejected']  { background: var(--status-cancelled-bg); color: var(--status-cancelled-text); }
 .status-pill[data-variant='draft']     { background: var(--status-neutral-bg);   color: var(--status-neutral-text); }
+
+/* Shared layout helpers (VD3) */
+.page-header { margin-bottom: 16px; }
+/* When the header lives inside an existing header row, the row owns the spacing */
+.toolbar .page-header,
+.hero-row .page-header { margin-bottom: 0; }
+.page-header h2 { font-size: 24px; font-weight: 700; color: var(--ink); margin: 0; }
+.page-header p { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+.surface-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+.value-card { background: var(--primary-soft); border: 1px solid #dde6fa; border-radius: var(--radius-card); }
+/* comfortable Element Plus tables, app-wide */
+.el-table { --el-table-border-color: var(--line-soft); --el-table-row-hover-bg-color: var(--primary-soft); }
+.el-table th.el-table__cell { background: var(--surface-alt); color: var(--muted); font-weight: 600; }
+.el-table .el-table__cell { padding: 11px 0; }
+.el-table .el-table__row--striped td.el-table__cell { background: var(--surface-alt); }

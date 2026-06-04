@@ -150,7 +150,7 @@ onMounted(async () => {
 <template>
   <div class="page dashboard-page">
     <section class="hero-row">
-      <div>
+      <div class="page-header">
         <h2>{{ t('dashboard.title') }}</h2>
         <p>{{ t('dashboard.subtitle') }}</p>
       </div>

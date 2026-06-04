@@ -231,7 +231,7 @@ onMounted(loadAll)
     />
 
     <template v-else-if="!loading">
-      <header class="doctor-detail__header">
+      <header class="doctor-detail__header page-header">
         <h2>{{ displayName }}</h2>
         <PublishStatusBadge
           v-if="profile"

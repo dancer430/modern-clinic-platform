@@ -69,7 +69,7 @@ onMounted(async () => {
 <template>
   <div class="page patient-home-page">
     <section class="hero-row">
-      <div>
+      <div class="page-header">
         <h2>{{ t('patientHome.title') }}</h2>
         <p>{{ t('patientHome.subtitle') }}</p>
       </div>
