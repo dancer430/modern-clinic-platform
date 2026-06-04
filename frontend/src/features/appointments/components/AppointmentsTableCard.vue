@@ -39,29 +39,40 @@ const emit = defineEmits<{
           <ElTag :type="statusTagType(row.status)" size="small">{{ t('status.' + row.status) }}</ElTag>
         </template>
       </ElTableColumn>
-      <ElTableColumn :label="t('common.actions')" width="200">
+      <ElTableColumn :label="t('common.actions')" width="220">
         <template #default="{ row }">
-          <template v-if="row.status === 'pending'">
-            <ElButton
-              text
-              :disabled="!canConfirm(row)"
-              :title="canConfirm(row) ? '' : t('appointments.onlyResponsibleConfirm')"
-              @click="emit('confirm', row.id)"
-            >
-              {{ t('appointments.confirm') }}
-            </ElButton>
-            <ElButton text type="danger" @click="emit('cancel', row.id)">{{ t('common.cancel') }}</ElButton>
-          </template>
-          <template v-else-if="row.status === 'confirmed'">
-            <ElButton
-              text
-              :disabled="!canComplete(row)"
-              :title="canComplete(row) ? '' : t('appointments.onlyResponsibleComplete')"
-              @click="emit('complete', row.id)"
-            >
-              {{ t('appointments.complete') }}
-            </ElButton>
-          </template>
+          <div class="row-actions">
+            <template v-if="row.status === 'pending'">
+              <ElButton
+                type="primary"
+                plain
+                round
+                size="small"
+                :disabled="!canConfirm(row)"
+                :title="canConfirm(row) ? '' : t('appointments.onlyResponsibleConfirm')"
+                @click="emit('confirm', row.id)"
+              >
+                {{ t('appointments.confirm') }}
+              </ElButton>
+              <ElButton type="danger" plain round size="small" @click="emit('cancel', row.id)">
+                {{ t('common.cancel') }}
+              </ElButton>
+            </template>
+            <template v-else-if="row.status === 'confirmed'">
+              <ElButton
+                type="success"
+                plain
+                round
+                size="small"
+                :disabled="!canComplete(row)"
+                :title="canComplete(row) ? '' : t('appointments.onlyResponsibleComplete')"
+                @click="emit('complete', row.id)"
+              >
+                {{ t('appointments.complete') }}
+              </ElButton>
+            </template>
+            <span v-else class="row-actions-empty">—</span>
+          </div>
         </template>
       </ElTableColumn>
       <template #empty>
@@ -70,3 +81,17 @@ const emit = defineEmits<{
     </ElTable>
   </section>
 </template>
+
+<style scoped>
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.row-actions :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+.row-actions-empty {
+  color: var(--el-text-color-placeholder);
+}
+</style>

@@ -133,24 +133,6 @@ const calendarCells = computed(() => {
   return cells
 })
 
-const blockedCountByDate = computed(() => {
-  const map: Record<string, number> = {}
-  if (!selectedDoctorId.value) return map
-  SLOT_TIMES.forEach((time) => {
-    calendarCells.value.forEach((cell) => {
-      if (!cell.date) return
-      const blocked = scheduleSlots.value.some(
-        (slot) =>
-          slot.doctor === selectedDoctorId.value &&
-          slot.slot_date === cell.date &&
-          slot.slot_time.slice(0, 5) === time &&
-          slot.is_available === false
-      )
-      if (blocked) map[cell.date] = (map[cell.date] || 0) + 1
-    })
-  })
-  return map
-})
 
 const appointmentStatsByDate = computed(() => {
   const map: Record<
@@ -433,9 +415,6 @@ onMounted(async () => {
             @click="selectDate(cell.date)"
           >
             <span v-if="cell.day" class="day-label">{{ cell.day }}</span>
-            <span v-if="cell.date && blockedCountByDate[cell.date]" class="slot-count">
-              {{ t('schedule.blockedCount', { count: blockedCountByDate[cell.date] }) }}
-            </span>
             <div v-if="cell.date && appointmentStatsByDate[cell.date]" class="appointment-stats">
               <span class="stats-total">{{ t('schedule.apptCount', { count: appointmentStatsByDate[cell.date].total }) }}</span>
               <span class="stats-split">
