@@ -1,35 +1,45 @@
 :root {
-  --bg: #edf2f7;
+  --bg: #eef2f7;
+  --page-bg: #eef2f7;
   --card: #ffffff;
-  --line: #dce4f2;
-  --text: #1b2a4a;
-  --muted: #6f7c9a;
-  --primary-a: #3e66e9;
-  --primary-b: #3058d9;
-  --success-bg: #ddf8ef;
-  --success-text: #0f8f67;
-  --warn-bg: #fff4db;
-  --warn-text: #b87410;
-  --danger-bg: #fff0f3;
-  --danger-text: #ca3650;
-  --status-total-bg: #edf2f7;
-  --status-total-text: #2d3748;
-  --status-pending-bg: #fff4e6;
-  --status-pending-text: #ed8936;
-  --status-confirmed-bg: #ebf8ff;
-  --status-confirmed-text: #3182ce;
-  --status-completed-bg: #e6ffef;
-  --status-completed-text: #48bb78;
-  --action-unavailable-bg: #fff6eb;
-  --action-unavailable-border: #f3c08f;
-  --action-unavailable-text: #b85f00;
-  --action-available-bg: #ecf7ff;
-  --action-available-border: #8ac6f2;
-  --action-available-text: #2b6fb6;
-  --action-clear-bg: #f8fafd;
-  --action-clear-border: #cfd7e6;
-  --action-clear-text: #4a5568;
+  --surface-alt: #fafbfd;
+  --line: #e2e6f0;
+  --line-soft: #f3f5f9;
+  --ink: #1e295a;
+  --text: #1e295a;
+  --muted: #707a8c;
+  --primary: #3b5bdb;
+  --primary-a: #3b5bdb;
+  --primary-b: #3250c4;
+  --primary-soft: #eef2fb;
+  --success-bg: #e7f6ec;  --success-text: #2e7d4f;
+  --warn-bg: #fff5e6;     --warn-text: #b9821a;
+  --danger-bg: #fbe9ec;   --danger-text: #c2334a;
+  --status-total-bg: #edf2f7;     --status-total-text: #2d3748;
+  --status-pending-bg: #fff5e6;   --status-pending-text: #b9821a;
+  --status-confirmed-bg: #e8eefc; --status-confirmed-text: #2d63c8;
+  --status-completed-bg: #e7f6ec; --status-completed-text: #2e7d4f;
+  --status-cancelled-bg: #fbe9ec; --status-cancelled-text: #c2334a;
+  --status-neutral-bg: #eef0f4;   --status-neutral-text: #707a8c;
+  --action-unavailable-bg: #fff5e6;  --action-unavailable-border: #f0d49b;  --action-unavailable-text: #b9821a;
+  --action-available-bg: #e8eefc;    --action-available-border: #c2d2f5;    --action-available-text: #2d63c8;
+  --action-clear-bg: #f8fafd;        --action-clear-border: #cfd7e6;        --action-clear-text: #4a5568;
+  --radius-card: 12px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+  --shadow-card: 0 6px 16px rgba(36, 60, 120, 0.06);
   font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", sans-serif;
+}
+
+:root {
+  --el-color-primary: #3b5bdb;
+  --el-color-primary-light-3: #6b86e6;
+  --el-color-primary-light-5: #9db0ee;
+  --el-color-primary-light-7: #cdd7f7;
+  --el-color-primary-light-8: #e1e8fb;
+  --el-color-primary-light-9: #eef2fb;
+  --el-color-primary-dark-2: #3250c4;
+  --el-border-radius-base: 10px;
 }
 
 * { box-sizing: border-box; }
