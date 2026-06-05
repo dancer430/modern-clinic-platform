@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import AppointmentDetailDrawer from '../components/AppointmentDetailDrawer.vue'
 import AppointmentsFilters from '../components/AppointmentsFilters.vue'
 import AppointmentsPagination from '../components/AppointmentsPagination.vue'
 import AppointmentsTableCard from '../components/AppointmentsTableCard.vue'
@@ -11,16 +12,32 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/features/auth/store'
 
 import { useAppointmentsPage } from '../composables/useAppointmentsPage'
+import type { AppointmentItem } from '../types'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
 
+const detailVisible = ref(false)
+const selectedAppointment = ref<AppointmentItem | null>(null)
+
+const openDetail = (row: AppointmentItem) => {
+  selectedAppointment.value = row
+  detailVisible.value = true
+}
+
+const isOperator = computed(() => authStore.user?.user_type === 'operator')
+
 const pageTitle = computed(() =>
-  authStore.user?.user_type === 'admin' ? t('appointments.titleManage') : t('appointments.titleMine')
+  authStore.user?.user_type === 'admin' || isOperator.value
+    ? t('appointments.titleManage')
+    : t('appointments.titleMine')
 )
+
+const canManage = computed(() => authStore.isAdmin || authStore.isDoctor)
 
 const {
   applyListFilters,
+  dateFilter,
   cancelAppointment,
   cancelDialogMessage,
   canComplete,
@@ -53,6 +70,7 @@ const {
   removeCompleteAttachment,
   resetListFilters,
   search,
+  setToday,
   showCancelDialog,
   showCompleteDialog,
   showConfirmDialog,
@@ -71,18 +89,21 @@ const {
     <section class="toolbar">
       <div class="page-header">
         <h2>{{ pageTitle }}</h2>
-        <p>{{ t('appointments.slotsHint') }}</p>
+        <p v-if="!isOperator">{{ t('appointments.slotsHint') }}</p>
       </div>
-      <ElButton type="primary" @click="openCreate">{{ t('appointments.newAppointment') }}</ElButton>
+      <ElButton v-if="canManage" type="primary" @click="openCreate">{{ t('appointments.newAppointment') }}</ElButton>
     </section>
 
     <AppointmentsFilters
       :search="search"
       :status="status"
+      :date="dateFilter"
       @update:search="search = $event"
       @update:status="status = $event"
+      @update:date="dateFilter = $event"
       @search="applyListFilters"
       @reset="resetListFilters"
+      @today="setToday"
     />
 
     <AppointmentsTableCard
@@ -90,10 +111,15 @@ const {
       :appointments="filtered"
       :can-confirm="canConfirm"
       :can-complete="canComplete"
+      :can-manage="canManage"
+      :can-cancel="!isOperator"
       @confirm="openConfirmDialog"
       @cancel="openCancelDialog"
       @complete="openCompleteDialog"
+      @view="openDetail"
     />
+
+    <AppointmentDetailDrawer v-model="detailVisible" :appointment="selectedAppointment" />
 
     <AppointmentsPagination
       :page="page"

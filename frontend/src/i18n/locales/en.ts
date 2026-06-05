@@ -83,7 +83,7 @@ export default {
   },
   status: {
     pending: 'Pending',
-    confirmed: 'Confirmed',
+    confirmed: 'Consulting',
     completed: 'Completed',
     cancelled: 'Cancelled',
   },
@@ -91,6 +91,7 @@ export default {
     admin: 'Admin',
     doctor: 'Doctor',
     patient: 'Patient',
+    operator: 'Operations',
   },
   auth: {
     streamlineTitle: 'Streamline Your Medical Practice',
@@ -121,8 +122,8 @@ export default {
     todaysAppointments: "Today's Appointments",
     pendingToday: 'Pending Today',
     needConfirmation: 'Need doctor confirmation',
-    confirmedToday: 'Confirmed Today',
-    readyForVisit: 'Ready for visit',
+    confirmedToday: 'Consulting Today',
+    readyForVisit: 'In consultation',
     completedToday: 'Completed Today',
     cancelledSuffix: '{count} cancelled',
     todaySchedule: 'Today Schedule',

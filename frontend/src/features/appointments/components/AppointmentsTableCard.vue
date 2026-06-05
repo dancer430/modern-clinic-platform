@@ -11,12 +11,15 @@ defineProps<{
   appointments: AppointmentItem[]
   canConfirm: (item: AppointmentItem) => boolean
   canComplete: (item: AppointmentItem) => boolean
+  canManage: boolean
+  canCancel: boolean
 }>()
 
 const emit = defineEmits<{
   confirm: [id: number]
   cancel: [id: number]
   complete: [id: number]
+  view: [row: AppointmentItem]
 }>()
 </script>
 
@@ -40,11 +43,15 @@ const emit = defineEmits<{
           <StatusBadge :status="row.status" />
         </template>
       </ElTableColumn>
-      <ElTableColumn :label="t('common.actions')" width="220">
+      <ElTableColumn :label="t('common.actions')" width="280">
         <template #default="{ row }">
           <div class="row-actions">
+            <ElButton text type="primary" size="small" @click="emit('view', row)">
+              {{ t('appointments.viewDetail') }}
+            </ElButton>
             <template v-if="row.status === 'pending'">
               <ElButton
+                v-if="canManage"
                 type="primary"
                 plain
                 round
@@ -55,12 +62,13 @@ const emit = defineEmits<{
               >
                 {{ t('appointments.confirm') }}
               </ElButton>
-              <ElButton type="danger" plain round size="small" @click="emit('cancel', row.id)">
+              <ElButton v-if="canCancel" type="danger" plain round size="small" @click="emit('cancel', row.id)">
                 {{ t('common.cancel') }}
               </ElButton>
             </template>
             <template v-else-if="row.status === 'confirmed'">
               <ElButton
+                v-if="canManage"
                 type="success"
                 plain
                 round

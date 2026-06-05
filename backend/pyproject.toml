@@ -25,6 +25,7 @@ target-version = "py312"
 extend-exclude = [
     "**/migrations/**",
     ".venv",
+    "seed_demo_full.py",  # one-off demo seed script piped into manage.py shell; intentionally compact
 ]
 
 [tool.ruff.lint]
@@ -45,4 +46,5 @@ extend-exclude = '''
   | migrations
   | \.venv
 )/
+| seed_demo_full\.py
 '''

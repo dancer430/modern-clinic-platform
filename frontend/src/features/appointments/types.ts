@@ -15,6 +15,10 @@ export interface AppointmentItem {
   patient_name: string
   doctor: number
   doctor_name: string
+  patient_phone?: string
+  patient_email?: string
+  doctor_phone?: string
+  doctor_email?: string
   appointment_date: string
   appointment_time: string
   reason: string
@@ -75,6 +79,7 @@ export interface AppointmentQueryParams {
   page_size: number
   status?: AppointmentStatus
   q?: string
+  date?: string
 }
 
 export const SLOT_TIMES = [

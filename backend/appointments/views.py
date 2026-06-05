@@ -25,10 +25,21 @@ class AppointmentPagination(PageNumberPagination):
     max_page_size = 50
 
 
+class AppointmentAccessPermission(permissions.IsAuthenticated):
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+        if view.action in ("list", "retrieve"):
+            return True
+        # Operators have read-only access; all other authenticated roles may attempt writes
+        # (service layer enforces finer-grained rules, e.g. patients only for themselves)
+        return request.user.role != User.Role.OPERATOR
+
+
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment._default_manager.all()
     serializer_class = AppointmentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AppointmentAccessPermission]
     pagination_class = AppointmentPagination
 
     def get_queryset(self):
@@ -63,7 +74,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
         queryset = queryset.order_by("-appointment_date", "-appointment_time", "-id")
 
-        if user.role == User.Role.ADMIN:
+        if user.role in (User.Role.ADMIN, User.Role.OPERATOR):
             return queryset
         if user.role == User.Role.DOCTOR:
             return queryset.filter(doctor=user)
@@ -92,7 +103,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             appointment=appointment,
             confirm_info=payload.validated_data["confirm_info"],
         )
-        return Response(AppointmentSerializer(appointment).data)
+        return Response(AppointmentSerializer(appointment, context={"request": request}).data)
 
     @action(detail=True, methods=["put"], url_path="complete")
     def complete(self, request, pk: int | None = None):
@@ -121,14 +132,14 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             medical_advice=payload.validated_data.get("medical_advice", ""),
             attachments=attachment_inputs,
         )
-        return Response(AppointmentSerializer(appointment).data)
+        return Response(AppointmentSerializer(appointment, context={"request": request}).data)
 
     @action(detail=True, methods=["put"], url_path="cancel")
     def cancel(self, request, pk: int | None = None):
         appointment = self.get_object()
         AppointmentCancelSerializer(data=request.data).is_valid(raise_exception=True)
         appointment = services.cancel_appointment(actor=request.user, appointment=appointment)
-        return Response(AppointmentSerializer(appointment).data)
+        return Response(AppointmentSerializer(appointment, context={"request": request}).data)
 
 
 class ScheduleSlotViewSet(viewsets.ModelViewSet):
