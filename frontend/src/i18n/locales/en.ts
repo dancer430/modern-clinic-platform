@@ -83,7 +83,7 @@ export default {
   },
   status: {
     pending: 'Pending',
-    confirmed: 'Confirmed',
+    confirmed: 'Consulting',
     completed: 'Completed',
     cancelled: 'Cancelled',
   },
@@ -91,6 +91,7 @@ export default {
     admin: 'Admin',
     doctor: 'Doctor',
     patient: 'Patient',
+    operator: 'Operations',
   },
   auth: {
     streamlineTitle: 'Streamline Your Medical Practice',

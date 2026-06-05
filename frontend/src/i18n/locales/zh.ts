@@ -82,8 +82,8 @@ export default {
     'doctor-detail': '医生',
   },
   status: {
-    pending: '待确认',
-    confirmed: '已确认',
+    pending: '待就诊',
+    confirmed: '诊疗中',
     completed: '已完成',
     cancelled: '已取消',
   },
@@ -91,6 +91,7 @@ export default {
     admin: '管理员',
     doctor: '医生',
     patient: '患者',
+    operator: '运营',
   },
   auth: {
     streamlineTitle: '让您的诊疗管理更高效',

@@ -71,6 +71,18 @@ export const en = {
     pickSlot: 'Pick a time slot',
     noSlotsForDay: 'No bookable slots for this day — open slots in the schedule first.',
     selectDoctorFirst: 'Select a doctor and date to see available slots.',
+
+    // Drawer / filter
+    detailTitle: 'Appointment detail',
+    sectionPatient: 'Patient',
+    sectionDoctor: 'Doctor',
+    contactPhone: 'Phone',
+    contactEmail: 'Email',
+    fieldDateTime: 'Date & time',
+    notProvided: 'Not provided',
+    viewDetail: 'Detail',
+    todayFilter: 'Today',
+    dateFilter: 'Date',
   },
 }
 
@@ -147,5 +159,17 @@ export const zh = {
     pickSlot: '选择时段',
     noSlotsForDay: '该日无可约时段,请先在排班开放时段。',
     selectDoctorFirst: '请先选择医生和日期以查看可约时段。',
+
+    // Drawer / filter
+    detailTitle: '预约详情',
+    sectionPatient: '患者',
+    sectionDoctor: '医生',
+    contactPhone: '电话',
+    contactEmail: '邮箱',
+    fieldDateTime: '日期时间',
+    notProvided: '未填写',
+    viewDetail: '详情',
+    todayFilter: '今日',
+    dateFilter: '日期',
   },
 }
