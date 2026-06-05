@@ -112,6 +112,7 @@ const {
       :can-confirm="canConfirm"
       :can-complete="canComplete"
       :can-manage="canManage"
+      :can-cancel="!isOperator"
       @confirm="openConfirmDialog"
       @cancel="openCancelDialog"
       @complete="openCompleteDialog"

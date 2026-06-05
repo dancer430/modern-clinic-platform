@@ -103,7 +103,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             appointment=appointment,
             confirm_info=payload.validated_data["confirm_info"],
         )
-        return Response(AppointmentSerializer(appointment).data)
+        return Response(AppointmentSerializer(appointment, context={"request": request}).data)
 
     @action(detail=True, methods=["put"], url_path="complete")
     def complete(self, request, pk: int | None = None):
@@ -132,14 +132,14 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             medical_advice=payload.validated_data.get("medical_advice", ""),
             attachments=attachment_inputs,
         )
-        return Response(AppointmentSerializer(appointment).data)
+        return Response(AppointmentSerializer(appointment, context={"request": request}).data)
 
     @action(detail=True, methods=["put"], url_path="cancel")
     def cancel(self, request, pk: int | None = None):
         appointment = self.get_object()
         AppointmentCancelSerializer(data=request.data).is_valid(raise_exception=True)
         appointment = services.cancel_appointment(actor=request.user, appointment=appointment)
-        return Response(AppointmentSerializer(appointment).data)
+        return Response(AppointmentSerializer(appointment, context={"request": request}).data)
 
 
 class ScheduleSlotViewSet(viewsets.ModelViewSet):

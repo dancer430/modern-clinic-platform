@@ -231,6 +231,7 @@ export const useAppointmentsPage = () => {
 
   const setToday = () => {
     dateFilter.value = toLocalDateString(new Date())
+    page.value = 1
     return fetchAppointments()
   }
 
