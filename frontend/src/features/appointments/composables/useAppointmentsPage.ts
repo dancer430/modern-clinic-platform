@@ -56,6 +56,7 @@ export const useAppointmentsPage = () => {
 
   const search = ref('')
   const status = ref<'all' | AppointmentStatus>('all')
+  const dateFilter = ref('')
   const page = ref(1)
   const pageSize = ref<10 | 20 | 50>(10)
   const totalCount = ref(0)
@@ -175,6 +176,10 @@ export const useAppointmentsPage = () => {
       params.q = search.value.trim()
     }
 
+    if (dateFilter.value) {
+      params.date = dateFilter.value
+    }
+
     const data = await fetchAppointmentsRequest(params)
 
     if (Array.isArray(data)) {
@@ -219,8 +224,14 @@ export const useAppointmentsPage = () => {
   const resetListFilters = async () => {
     search.value = ''
     status.value = 'all'
+    dateFilter.value = ''
     page.value = 1
     await fetchAppointments()
+  }
+
+  const setToday = () => {
+    dateFilter.value = toLocalDateString(new Date())
+    return fetchAppointments()
   }
 
   const handlePageChange = async (newPage: number) => {
@@ -457,6 +468,7 @@ export const useAppointmentsPage = () => {
   return {
     appointments,
     applyListFilters,
+    dateFilter,
     cancelAppointment,
     cancelDialogMessage,
     canComplete,
@@ -495,6 +507,7 @@ export const useAppointmentsPage = () => {
     removeCompleteAttachment,
     resetListFilters,
     search,
+    setToday,
     showCancelDialog,
     showCompleteDialog,
     showConfirmDialog,

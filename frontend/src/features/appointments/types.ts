@@ -75,6 +75,7 @@ export interface AppointmentQueryParams {
   page_size: number
   status?: AppointmentStatus
   q?: string
+  date?: string
 }
 
 export const SLOT_TIMES = [

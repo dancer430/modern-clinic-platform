@@ -23,6 +23,7 @@ const canManage = computed(() => authStore.isAdmin || authStore.isDoctor)
 
 const {
   applyListFilters,
+  dateFilter,
   cancelAppointment,
   cancelDialogMessage,
   canComplete,
@@ -55,6 +56,7 @@ const {
   removeCompleteAttachment,
   resetListFilters,
   search,
+  setToday,
   showCancelDialog,
   showCompleteDialog,
   showConfirmDialog,
@@ -81,10 +83,13 @@ const {
     <AppointmentsFilters
       :search="search"
       :status="status"
+      :date="dateFilter"
       @update:search="search = $event"
       @update:status="status = $event"
+      @update:date="dateFilter = $event"
       @search="applyListFilters"
       @reset="resetListFilters"
+      @today="setToday"
     />
 
     <AppointmentsTableCard
