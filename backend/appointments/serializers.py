@@ -36,6 +36,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     patient_name = serializers.SerializerMethodField()
     doctor_name = serializers.SerializerMethodField()
+    patient_phone = serializers.SerializerMethodField()
+    patient_email = serializers.SerializerMethodField()
+    doctor_phone = serializers.SerializerMethodField()
+    doctor_email = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
 
     def _display_name(self, user):
@@ -46,6 +50,23 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     def get_doctor_name(self, obj):
         return self._display_name(obj.doctor)
+
+    def _can_see_contact(self):
+        request = self.context.get("request")
+        role = getattr(getattr(request, "user", None), "role", None)
+        return role in (User.Role.ADMIN, User.Role.DOCTOR, User.Role.OPERATOR)
+
+    def get_patient_phone(self, obj):
+        return (obj.patient.phone or "") if self._can_see_contact() else ""
+
+    def get_patient_email(self, obj):
+        return (obj.patient.email or "") if self._can_see_contact() else ""
+
+    def get_doctor_phone(self, obj):
+        return (obj.doctor.phone or "") if self._can_see_contact() else ""
+
+    def get_doctor_email(self, obj):
+        return (obj.doctor.email or "") if self._can_see_contact() else ""
 
     def get_attachments(self, obj):
         return AppointmentAttachmentSerializer(obj.attachments.all(), many=True).data
@@ -58,6 +79,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "patient_name",
             "doctor",
             "doctor_name",
+            "patient_phone",
+            "patient_email",
+            "doctor_phone",
+            "doctor_email",
             "appointment_date",
             "appointment_time",
             "reason",
