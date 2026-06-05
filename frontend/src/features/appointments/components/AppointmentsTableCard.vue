@@ -11,6 +11,7 @@ defineProps<{
   appointments: AppointmentItem[]
   canConfirm: (item: AppointmentItem) => boolean
   canComplete: (item: AppointmentItem) => boolean
+  canManage: boolean
 }>()
 
 const emit = defineEmits<{
@@ -55,7 +56,7 @@ const emit = defineEmits<{
               >
                 {{ t('appointments.confirm') }}
               </ElButton>
-              <ElButton type="danger" plain round size="small" @click="emit('cancel', row.id)">
+              <ElButton v-if="canManage" type="danger" plain round size="small" @click="emit('cancel', row.id)">
                 {{ t('common.cancel') }}
               </ElButton>
             </template>

@@ -123,6 +123,36 @@ describe('beforeEachGuard', () => {
     expect(next).toHaveBeenCalledWith()
   })
 
+  it('operator passes through /appointments (roles include operator)', () => {
+    const auth = useAuthStore()
+    auth.token = 'tok'
+    auth.user = { id: 7, username: 'ops', email: 'ops', name: 'ops', user_type: 'operator', phone: '' }
+
+    const next = vi.fn()
+    beforeEachGuard(
+      buildRoute('/appointments', { requiresAuth: true, roles: ['admin', 'doctor', 'patient', 'operator'] }),
+      buildRoute('/dashboard'),
+      next,
+    )
+    expect(next).toHaveBeenCalledWith()
+    expect(messageWarningMock).not.toHaveBeenCalled()
+  })
+
+  it('operator hitting /doctors (admin-only) is redirected to /dashboard', () => {
+    const auth = useAuthStore()
+    auth.token = 'tok'
+    auth.user = { id: 8, username: 'ops2', email: 'ops2', name: 'ops2', user_type: 'operator', phone: '' }
+
+    const next = vi.fn()
+    beforeEachGuard(
+      buildRoute('/doctors', { requiresAuth: true, roles: ['admin'] }),
+      buildRoute('/dashboard'),
+      next,
+    )
+    expect(next).toHaveBeenCalledWith('/dashboard')
+    expect(messageWarningMock).toHaveBeenCalledTimes(1)
+  })
+
   it('gates /doctors and /patients to admin only', () => {
     const routes = router.getRoutes()
     const doctors = routes.find((r) => r.name === 'doctors')

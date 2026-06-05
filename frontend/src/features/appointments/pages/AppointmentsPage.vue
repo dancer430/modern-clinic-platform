@@ -19,6 +19,8 @@ const pageTitle = computed(() =>
   authStore.user?.user_type === 'admin' ? t('appointments.titleManage') : t('appointments.titleMine')
 )
 
+const canManage = computed(() => authStore.isAdmin || authStore.isDoctor)
+
 const {
   applyListFilters,
   cancelAppointment,
@@ -73,7 +75,7 @@ const {
         <h2>{{ pageTitle }}</h2>
         <p>{{ t('appointments.slotsHint') }}</p>
       </div>
-      <ElButton type="primary" @click="openCreate">{{ t('appointments.newAppointment') }}</ElButton>
+      <ElButton v-if="canManage" type="primary" @click="openCreate">{{ t('appointments.newAppointment') }}</ElButton>
     </section>
 
     <AppointmentsFilters
@@ -90,6 +92,7 @@ const {
       :appointments="filtered"
       :can-confirm="canConfirm"
       :can-complete="canComplete"
+      :can-manage="canManage"
       @confirm="openConfirmDialog"
       @cancel="openCancelDialog"
       @complete="openCompleteDialog"

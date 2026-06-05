@@ -5,8 +5,11 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import httpClient from '@/shared/http'
 import StatusBadge from '@/shared/components/StatusBadge.vue'
+import { useAuthStore } from '@/features/auth'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
+const isOperator = computed(() => authStore.user?.user_type === 'operator')
 
 type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 
@@ -225,7 +228,7 @@ onMounted(async () => {
             </div>
           </section>
 
-          <section>
+          <section v-if="!isOperator">
             <h3>{{ t('dashboard.quickActions') }}</h3>
             <div class="quick-actions">
               <button

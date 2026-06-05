@@ -26,9 +26,9 @@ interface NavItem {
 }
 
 const navItems: Array<NavItem> = [
-  { path: '/dashboard', labelKey: 'nav.dashboard', icon: DataLine, roles: ['admin', 'doctor'] },
+  { path: '/dashboard', labelKey: 'nav.dashboard', icon: DataLine, roles: ['admin', 'doctor', 'operator'] },
   { path: '/home', labelKey: 'nav.home', icon: DataLine, roles: ['patient'] },
-  { path: '/appointments', labelKey: 'nav.appointments', icon: Calendar, roles: ['admin'] },
+  { path: '/appointments', labelKey: 'nav.appointments', icon: Calendar, roles: ['admin', 'operator'] },
   { path: '/appointments', labelKey: 'nav.myAppointments', icon: Calendar, roles: ['doctor', 'patient'] },
   { path: '/portal/doctors', labelKey: 'nav.findDoctor', icon: FirstAidKit, roles: ['patient'] },
   { path: '/doctors', labelKey: 'nav.doctors', icon: FirstAidKit, roles: ['admin'] },
@@ -37,7 +37,7 @@ const navItems: Array<NavItem> = [
   { path: '/records', labelKey: 'nav.records', icon: Notebook, roles: ['admin', 'doctor'] },
   { path: '/admin/departments', labelKey: 'nav.departments', icon: OfficeBuilding, roles: ['admin'] },
   { path: '/doctor/profile', labelKey: 'nav.myPublicProfile', icon: Edit, roles: ['doctor'] },
-  { path: '/profile', labelKey: 'nav.profile', icon: Setting, roles: ['admin', 'doctor', 'patient'] },
+  { path: '/profile', labelKey: 'nav.profile', icon: Setting, roles: ['admin', 'doctor', 'patient', 'operator'] },
 ]
 
 const visibleNavItems = computed(() => {

@@ -16,7 +16,6 @@ declare module 'vue-router' {
   }
 }
 
-const ROLES_ALL: Array<Role> = ['admin', 'doctor', 'patient']
 const ROLES_STAFF: Array<Role> = ['admin', 'doctor']
 const ROLES_ADMIN: Array<Role> = ['admin']
 const ROLES_DOCTOR: Array<Role> = ['doctor']
@@ -60,7 +59,7 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/views/DashboardPage.vue'),
-      meta: { requiresAuth: true, roles: ROLES_STAFF },
+      meta: { requiresAuth: true, roles: ['admin', 'doctor', 'operator'] },
     },
     {
       path: '/patients',
@@ -90,7 +89,7 @@ const router = createRouter({
       path: '/appointments',
       name: 'appointments',
       component: () => import('@/features/appointments/pages/AppointmentsPage.vue'),
-      meta: { requiresAuth: true, roles: ROLES_ALL },
+      meta: { requiresAuth: true, roles: ['admin', 'doctor', 'patient', 'operator'] },
     },
     {
       path: '/timeslots',
@@ -108,7 +107,7 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/ProfilePage.vue'),
-      meta: { requiresAuth: true, roles: ROLES_ALL },
+      meta: { requiresAuth: true, roles: ['admin', 'doctor', 'patient', 'operator'] },
     },
     {
       path: '/admin/departments',
