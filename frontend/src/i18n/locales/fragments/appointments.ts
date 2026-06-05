@@ -8,7 +8,6 @@ export const en = {
     newAppointment: '+ New Appointment',
 
     // Filters
-    searchPlaceholder: 'Search patient/doctor/reason',
     allStatus: 'All status',
 
     // Table columns
@@ -83,6 +82,8 @@ export const en = {
     viewDetail: 'Detail',
     todayFilter: 'Today',
     dateFilter: 'Date',
+    filterDoctor: 'Filter by doctor',
+    filterPatient: 'Filter by patient',
   },
 }
 
@@ -96,7 +97,6 @@ export const zh = {
     newAppointment: '+ 新建预约',
 
     // Filters
-    searchPlaceholder: '搜索患者/医生/就诊原因',
     allStatus: '全部状态',
 
     // Table columns
@@ -171,5 +171,7 @@ export const zh = {
     viewDetail: '详情',
     todayFilter: '今日',
     dateFilter: '日期',
+    filterDoctor: '筛选医生',
+    filterPatient: '筛选患者',
   },
 }

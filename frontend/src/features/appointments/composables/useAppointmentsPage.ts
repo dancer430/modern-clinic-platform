@@ -54,7 +54,8 @@ export const useAppointmentsPage = () => {
   const patients = ref<UserOption[]>([])
   const scheduleSlots = ref<ScheduleSlot[]>([])
 
-  const search = ref('')
+  const doctorFilter = ref<number | null>(null)
+  const patientFilter = ref<number | null>(null)
   const status = ref<'all' | AppointmentStatus>('all')
   const dateFilter = ref('')
   const page = ref(1)
@@ -172,8 +173,12 @@ export const useAppointmentsPage = () => {
       params.status = status.value
     }
 
-    if (search.value.trim()) {
-      params.q = search.value.trim()
+    if (doctorFilter.value) {
+      params.doctor = doctorFilter.value
+    }
+
+    if (patientFilter.value) {
+      params.patient = patientFilter.value
     }
 
     if (dateFilter.value) {
@@ -222,7 +227,8 @@ export const useAppointmentsPage = () => {
   }
 
   const resetListFilters = async () => {
-    search.value = ''
+    doctorFilter.value = null
+    patientFilter.value = null
     status.value = 'all'
     dateFilter.value = ''
     page.value = 1
@@ -456,7 +462,7 @@ export const useAppointmentsPage = () => {
     applyCreateQueryPrefill()
   })
 
-  watch([status, pageSize], async () => {
+  watch([status, doctorFilter, patientFilter, pageSize], async () => {
     page.value = 1
     await fetchAppointments()
   })
@@ -487,6 +493,7 @@ export const useAppointmentsPage = () => {
     createAppointment,
     createSubmitAttempted,
     displayName,
+    doctorFilter,
     doctors,
     filtered,
     form,
@@ -504,10 +511,10 @@ export const useAppointmentsPage = () => {
     pageEnd,
     pageSize,
     pageStart,
+    patientFilter,
     patients,
     removeCompleteAttachment,
     resetListFilters,
-    search,
     setToday,
     showCancelDialog,
     showCompleteDialog,

@@ -1,36 +1,64 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 
-import type { AppointmentStatus } from '../types'
+import type { AppointmentStatus, UserOption } from '../types'
 
 const { t } = useI18n()
 
 defineProps<{
-  search: string
+  doctorId: number | null
+  patientId: number | null
+  doctors: UserOption[]
+  patients: UserOption[]
   status: 'all' | AppointmentStatus
   date: string
 }>()
 
 const emit = defineEmits<{
-  'update:search': [value: string]
+  'update:doctorId': [value: number | null]
+  'update:patientId': [value: number | null]
   'update:status': [value: 'all' | AppointmentStatus]
   'update:date': [value: string]
   search: []
   reset: []
   today: []
 }>()
+
+const optionLabel = (user: UserOption) => user.name || user.username
 </script>
 
 <template>
   <section class="filters filters-inline appointments-filters">
-    <ElInput
-      :model-value="search"
-      :placeholder="t('appointments.searchPlaceholder')"
+    <ElSelect
+      :model-value="doctorId"
+      filterable
       clearable
-      style="width: 280px;"
-      @update:model-value="(value) => emit('update:search', value || '')"
-      @keyup.enter="emit('search')"
-    />
+      :placeholder="t('appointments.filterDoctor')"
+      style="width: 200px;"
+      @update:model-value="(value) => emit('update:doctorId', value ?? null)"
+    >
+      <ElOption
+        v-for="doctor in doctors"
+        :key="doctor.id"
+        :label="optionLabel(doctor)"
+        :value="doctor.id"
+      />
+    </ElSelect>
+    <ElSelect
+      :model-value="patientId"
+      filterable
+      clearable
+      :placeholder="t('appointments.filterPatient')"
+      style="width: 200px;"
+      @update:model-value="(value) => emit('update:patientId', value ?? null)"
+    >
+      <ElOption
+        v-for="patient in patients"
+        :key="patient.id"
+        :label="optionLabel(patient)"
+        :value="patient.id"
+      />
+    </ElSelect>
     <ElSelect
       :model-value="status"
       style="width: 160px;"
@@ -52,6 +80,11 @@ const emit = defineEmits<{
     />
     <ElButton @click="emit('today')">{{ t('appointments.todayFilter') }}</ElButton>
     <ElButton type="primary" @click="emit('search')">{{ t('common.search') }}</ElButton>
-    <ElButton :disabled="!search && status === 'all' && !date" @click="emit('reset')">{{ t('common.reset') }}</ElButton>
+    <ElButton
+      :disabled="!doctorId && !patientId && status === 'all' && !date"
+      @click="emit('reset')"
+    >
+      {{ t('common.reset') }}
+    </ElButton>
   </section>
 </template>
