@@ -1,4 +1,5 @@
 import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
@@ -46,6 +47,7 @@ export const useAppointmentsPage = () => {
   const authStore = useAuthStore()
   const route = useRoute()
   const router = useRouter()
+  const { t } = useI18n()
 
   const loading = ref(false)
 
@@ -91,9 +93,13 @@ export const useAppointmentsPage = () => {
   )
 
   const cancelDialogMessage = computed(() => {
-    if (!cancelTarget.value) return 'Cancel this appointment?'
+    if (!cancelTarget.value) return t('appointments.cancelMessageFallback')
 
-    return `Cancel appointment for ${cancelTarget.value.patient_name} on ${cancelTarget.value.appointment_date} ${cancelTarget.value.appointment_time.slice(0, 5)}?`
+    return t('appointments.cancelMessage', {
+      name: cancelTarget.value.patient_name,
+      date: cancelTarget.value.appointment_date,
+      time: cancelTarget.value.appointment_time.slice(0, 5),
+    })
   })
 
   const bookedCount = (doctorId: number, date: string, time: string) => {
@@ -215,7 +221,7 @@ export const useAppointmentsPage = () => {
     try {
       await Promise.all([fetchAppointments(), fetchDoctors(), fetchPatients(), fetchScheduleSlots()])
     } catch (error: any) {
-      ElMessage.error(error.response?.data?.detail || 'Failed to load appointment data')
+      ElMessage.error(error.response?.data?.detail || t('appointments.loadFailed'))
     } finally {
       loading.value = false
     }
@@ -304,10 +310,10 @@ export const useAppointmentsPage = () => {
       })
       showDialog.value = false
       createSubmitAttempted.value = false
-      ElMessage.success('Appointment created')
+      ElMessage.success(t('appointments.createdSuccess'))
       await fetchAppointments()
     } catch (error: any) {
-      ElMessage.error(error.response?.data?.detail || 'Create appointment failed')
+      ElMessage.error(error.response?.data?.detail || t('appointments.createFailed'))
     }
   }
 
@@ -331,10 +337,10 @@ export const useAppointmentsPage = () => {
       showConfirmDialog.value = false
       confirmTargetId.value = null
       confirmInfoForm.value = ''
-      ElMessage.success('Appointment confirmed')
+      ElMessage.success(t('appointments.confirmedSuccess'))
       await fetchAppointments()
     } catch (error: any) {
-      ElMessage.error(error.response?.data?.detail || 'Confirm appointment failed')
+      ElMessage.error(error.response?.data?.detail || t('appointments.confirmFailed'))
     }
   }
 
@@ -361,7 +367,7 @@ export const useAppointmentsPage = () => {
       for (const file of files) {
         const validation = validateImageFile(file)
         if (!validation.valid) {
-          ElMessage.error(validation.error || 'Invalid image file')
+          ElMessage.error(validation.error || t('appointments.invalidImage'))
           continue
         }
 
@@ -374,7 +380,7 @@ export const useAppointmentsPage = () => {
         })
       }
     } catch {
-      ElMessage.error('Attachment processing failed')
+      ElMessage.error(t('appointments.attachmentFailed'))
     }
   }
 
@@ -417,7 +423,7 @@ export const useAppointmentsPage = () => {
       completeTargetId.value = null
       completeSubmitAttempted.value = false
       completeForm.value = createDefaultCompleteForm()
-      ElMessage.success('Appointment completed')
+      ElMessage.success(t('appointments.completedSuccess'))
       await fetchAppointments()
 
       if (shouldCreateNext) {
@@ -427,7 +433,7 @@ export const useAppointmentsPage = () => {
         })
       }
     } catch (error: any) {
-      ElMessage.error(error.response?.data?.detail || 'Complete appointment failed')
+      ElMessage.error(error.response?.data?.detail || t('appointments.completeFailed'))
     }
   }
 
@@ -450,10 +456,10 @@ export const useAppointmentsPage = () => {
       await cancelAppointmentRequest(cancelTargetId.value)
       showCancelDialog.value = false
       cancelTargetId.value = null
-      ElMessage.success('Appointment cancelled')
+      ElMessage.success(t('appointments.cancelledSuccess'))
       await fetchAppointments()
     } catch (error: any) {
-      ElMessage.error(error.response?.data?.detail || 'Cancel appointment failed')
+      ElMessage.error(error.response?.data?.detail || t('appointments.cancelFailed'))
     }
   }
 
