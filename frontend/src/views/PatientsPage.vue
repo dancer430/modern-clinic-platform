@@ -189,7 +189,7 @@ onMounted(async () => {
 <template>
   <div class="page">
     <section class="toolbar">
-      <div>
+      <div class="page-header">
         <h2>{{ t('patients.title') }}</h2>
         <p>{{ t('patients.countSummary', { count: filteredPatients.length }) }}</p>
       </div>
@@ -226,6 +226,7 @@ onMounted(async () => {
       <ElTable
         v-loading="loading"
         :data="filteredPatients"
+        stripe
         style="width: 100%;"
       >
         <ElTableColumn prop="name" :label="t('patients.columnName')">

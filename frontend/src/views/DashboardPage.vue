@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import httpClient from '@/shared/http'
+import StatusBadge from '@/shared/components/StatusBadge.vue'
 
 const { t } = useI18n()
 
@@ -81,10 +82,10 @@ const statusSegments = computed(() => {
 
 const statusPieStyle = computed(() => ({
   background: `conic-gradient(
-    #ed8936 0% ${statusSegments.value.pending}%,
-    #3182ce ${statusSegments.value.pending}% ${statusSegments.value.pending + statusSegments.value.confirmed}%,
-    #48bb78 ${statusSegments.value.pending + statusSegments.value.confirmed}% ${statusSegments.value.pending + statusSegments.value.confirmed + statusSegments.value.completed}%,
-    #c2334a ${statusSegments.value.pending + statusSegments.value.confirmed + statusSegments.value.completed}% 100%
+    var(--status-pending-text) 0% ${statusSegments.value.pending}%,
+    var(--status-confirmed-text) ${statusSegments.value.pending}% ${statusSegments.value.pending + statusSegments.value.confirmed}%,
+    var(--status-completed-text) ${statusSegments.value.pending + statusSegments.value.confirmed}% ${statusSegments.value.pending + statusSegments.value.confirmed + statusSegments.value.completed}%,
+    var(--status-cancelled-text) ${statusSegments.value.pending + statusSegments.value.confirmed + statusSegments.value.completed}% 100%
   )`,
 }))
 
@@ -94,16 +95,6 @@ const statusLegend = computed(() => [
   { label: t('status.completed'), value: completedCount.value, tone: 'completed' },
   { label: t('status.cancelled'), value: cancelledCount.value, tone: 'cancelled' },
 ])
-
-const statusTagType = (status: AppointmentStatus) => {
-  const map: Record<AppointmentStatus, '' | 'success' | 'warning' | 'danger' | 'info'> = {
-    pending: 'warning',
-    confirmed: '',
-    completed: 'success',
-    cancelled: 'danger',
-  }
-  return map[status]
-}
 
 const quickActions = computed(() => [
   {
@@ -159,7 +150,7 @@ onMounted(async () => {
 <template>
   <div class="page dashboard-page">
     <section class="hero-row">
-      <div>
+      <div class="page-header">
         <h2>{{ t('dashboard.title') }}</h2>
         <p>{{ t('dashboard.subtitle') }}</p>
       </div>
@@ -213,7 +204,7 @@ onMounted(async () => {
                 <strong>{{ item.patient_name }}</strong>
                 <span>{{ item.doctor_name }} · {{ item.appointment_time.slice(0, 5) }}</span>
               </div>
-              <el-tag :type="statusTagType(item.status)" size="small">{{ t(`status.${item.status}`) }}</el-tag>
+              <StatusBadge :status="item.status" />
             </li>
           </ul>
           <el-empty v-else :description="t('dashboard.noUpcoming')" :image-size="80" />

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import httpClient from '@/shared/http'
+import StatusBadge from '@/shared/components/StatusBadge.vue'
 
 const { t } = useI18n()
 
@@ -158,7 +159,7 @@ onMounted(async () => {
 <template>
   <div class="page" v-loading="loading">
     <section class="toolbar">
-      <div>
+      <div class="page-header">
         <h2>{{ t('records.title') }}</h2>
         <p>{{ t('records.subtitle') }}</p>
       </div>
@@ -221,7 +222,7 @@ onMounted(async () => {
         <template #header>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3 style="margin: 0;">{{ item.patient_name }}</h3>
-            <el-tag type="success" size="small">{{ t('status.completed') }}</el-tag>
+            <StatusBadge status="completed" />
           </div>
         </template>
         <p><strong>{{ t('records.cardDoctor') }}</strong> {{ item.doctor_name }}</p>

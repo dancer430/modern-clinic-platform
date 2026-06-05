@@ -60,7 +60,6 @@ const {
   showSqliteAttachmentHint,
   slotOptions,
   status,
-  statusTagType,
   submitComplete,
   submitConfirm,
   totalCount,
@@ -70,7 +69,7 @@ const {
 <template>
   <div class="page">
     <section class="toolbar">
-      <div>
+      <div class="page-header">
         <h2>{{ pageTitle }}</h2>
         <p>{{ t('appointments.slotsHint') }}</p>
       </div>
@@ -89,7 +88,6 @@ const {
     <AppointmentsTableCard
       :loading="loading"
       :appointments="filtered"
-      :status-tag-type="statusTagType"
       :can-confirm="canConfirm"
       :can-complete="canComplete"
       @confirm="openConfirmDialog"
