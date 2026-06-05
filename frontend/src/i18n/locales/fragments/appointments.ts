@@ -84,6 +84,21 @@ export const en = {
     dateFilter: 'Date',
     filterDoctor: 'Filter by doctor',
     filterPatient: 'Filter by patient',
+
+    // Toasts / dialog messages
+    cancelMessageFallback: 'Cancel this appointment?',
+    cancelMessage: 'Cancel appointment for {name} on {date} {time}?',
+    loadFailed: 'Failed to load appointment data',
+    createdSuccess: 'Appointment created',
+    createFailed: 'Create appointment failed',
+    confirmedSuccess: 'Appointment confirmed',
+    confirmFailed: 'Confirm appointment failed',
+    invalidImage: 'Invalid image file',
+    attachmentFailed: 'Attachment processing failed',
+    completedSuccess: 'Appointment completed',
+    completeFailed: 'Complete appointment failed',
+    cancelledSuccess: 'Appointment cancelled',
+    cancelFailed: 'Cancel appointment failed',
   },
 }
 
@@ -173,5 +188,20 @@ export const zh = {
     dateFilter: '日期',
     filterDoctor: '筛选医生',
     filterPatient: '筛选患者',
+
+    // Toasts / dialog messages
+    cancelMessageFallback: '确定取消该预约吗？',
+    cancelMessage: '确定取消 {name} 在 {date} {time} 的预约吗？',
+    loadFailed: '加载预约数据失败',
+    createdSuccess: '预约已创建',
+    createFailed: '创建预约失败',
+    confirmedSuccess: '预约已确认',
+    confirmFailed: '确认预约失败',
+    invalidImage: '无效的图片文件',
+    attachmentFailed: '附件处理失败',
+    completedSuccess: '就诊已完成',
+    completeFailed: '完成就诊失败',
+    cancelledSuccess: '预约已取消',
+    cancelFailed: '取消预约失败',
   },
 }
