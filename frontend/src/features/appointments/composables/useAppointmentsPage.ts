@@ -121,11 +121,15 @@ export const useAppointmentsPage = () => {
       const blocked = isBlocked(form.value.doctor as number, form.value.date, time)
       const booked = bookedCount(form.value.doctor as number, form.value.date, time)
 
+      const state: 'available' | 'booked' | 'unavailable' =
+        blocked ? 'unavailable' : booked > 0 ? 'booked' : 'available'
+
       return {
         time,
         blocked,
         booked,
         label: blocked ? `${time} · unavailable` : `${time} · ${booked} booked`,
+        state,
       }
     })
   })
@@ -245,7 +249,12 @@ export const useAppointmentsPage = () => {
     showDialog.value = true
   }
 
-  const openCreate = () => openCreateWithPrefill()
+  const openCreate = () => {
+    openCreateWithPrefill()
+    if (authStore.user?.user_type === 'doctor') {
+      form.value.doctor = authStore.user.id
+    }
+  }
 
   const applyCreateQueryPrefill = () => {
     if (route.path !== '/appointments') return
