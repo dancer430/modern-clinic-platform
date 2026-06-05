@@ -371,14 +371,14 @@ button:disabled {
   gap: 10px;
 }
 
-.filters input:not(.el-input__inner):not(.el-range-input),
+.filters input:not(.el-input__inner):not(.el-range-input):not(.el-select__input),
 .filters select,
-.grid input:not(.el-input__inner):not(.el-range-input),
+.grid input:not(.el-input__inner):not(.el-range-input):not(.el-select__input),
 .grid select,
 .grid textarea,
-.upload-card input:not(.el-input__inner):not(.el-range-input),
+.upload-card input:not(.el-input__inner):not(.el-range-input):not(.el-select__input),
 .upload-card textarea,
-.login-form input:not(.el-input__inner):not(.el-range-input) {
+.login-form input:not(.el-input__inner):not(.el-range-input):not(.el-select__input) {
   border: 1px solid #cfd9ec;
   background: #f8fbff;
   border-radius: 12px;
@@ -388,7 +388,7 @@ button:disabled {
   color: #26385f;
 }
 
-.filters input:not(.el-input__inner):not(.el-range-input)::placeholder {
+.filters input:not(.el-input__inner):not(.el-range-input):not(.el-select__input)::placeholder {
   color: #95a3c2;
 }
 
