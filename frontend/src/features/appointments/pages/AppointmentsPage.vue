@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import AppointmentDetailDrawer from '../components/AppointmentDetailDrawer.vue'
 import AppointmentsFilters from '../components/AppointmentsFilters.vue'
 import AppointmentsPagination from '../components/AppointmentsPagination.vue'
 import AppointmentsTableCard from '../components/AppointmentsTableCard.vue'
@@ -11,9 +12,18 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/features/auth/store'
 
 import { useAppointmentsPage } from '../composables/useAppointmentsPage'
+import type { AppointmentItem } from '../types'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
+
+const detailVisible = ref(false)
+const selectedAppointment = ref<AppointmentItem | null>(null)
+
+const openDetail = (row: AppointmentItem) => {
+  selectedAppointment.value = row
+  detailVisible.value = true
+}
 
 const pageTitle = computed(() =>
   authStore.user?.user_type === 'admin' ? t('appointments.titleManage') : t('appointments.titleMine')
@@ -101,7 +111,10 @@ const {
       @confirm="openConfirmDialog"
       @cancel="openCancelDialog"
       @complete="openCompleteDialog"
+      @view="openDetail"
     />
+
+    <AppointmentDetailDrawer v-model="detailVisible" :appointment="selectedAppointment" />
 
     <AppointmentsPagination
       :page="page"

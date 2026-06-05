@@ -18,6 +18,7 @@ const emit = defineEmits<{
   confirm: [id: number]
   cancel: [id: number]
   complete: [id: number]
+  view: [row: AppointmentItem]
 }>()
 </script>
 
@@ -41,9 +42,12 @@ const emit = defineEmits<{
           <StatusBadge :status="row.status" />
         </template>
       </ElTableColumn>
-      <ElTableColumn :label="t('common.actions')" width="220">
+      <ElTableColumn :label="t('common.actions')" width="280">
         <template #default="{ row }">
           <div class="row-actions">
+            <ElButton text type="primary" size="small" @click="emit('view', row)">
+              {{ t('appointments.viewDetail') }}
+            </ElButton>
             <template v-if="row.status === 'pending'">
               <ElButton
                 type="primary"
