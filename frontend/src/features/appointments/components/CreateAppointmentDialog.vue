@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+
+import { useAuthStore } from '@/features/auth'
 
 import type { CreateAppointmentForm, UserOption } from '../types'
 
@@ -11,9 +14,13 @@ defineProps<{
   form: CreateAppointmentForm
   patients: UserOption[]
   doctors: UserOption[]
-  slotOptions: Array<{ time: string; blocked: boolean; booked: number; label: string }>
+  slotOptions: Array<{ time: string; blocked: boolean; booked: number; state: 'available' | 'booked' | 'unavailable'; label: string }>
   displayName: (user: UserOption) => string
 }>()
+
+const authStore = useAuthStore()
+const isDoctorSelf = computed(() => authStore.user?.user_type === 'doctor')
+const selfName = computed(() => authStore.user?.name || authStore.user?.username || '')
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
@@ -52,18 +59,15 @@ const closeDialog = () => {
         </ElSelect>
       </ElFormItem>
       <ElFormItem :label="t('appointments.colDoctor')" required>
+        <div v-if="isDoctorSelf" class="locked-field">{{ selfName }}</div>
         <ElSelect
+          v-else
           v-model="form.doctor"
           :placeholder="t('appointments.selectDoctor')"
           style="width: 100%;"
           :class="{ 'is-error': createSubmitAttempted && !form.doctor }"
         >
-          <ElOption
-            v-for="doctor in doctors"
-            :key="doctor.id"
-            :label="displayName(doctor)"
-            :value="doctor.id"
-          />
+          <ElOption v-for="doctor in doctors" :key="doctor.id" :label="displayName(doctor)" :value="doctor.id" />
         </ElSelect>
       </ElFormItem>
       <ElFormItem :label="t('appointments.colDate')" required>
@@ -76,36 +80,30 @@ const closeDialog = () => {
           :class="{ 'is-error': createSubmitAttempted && !form.date }"
         />
       </ElFormItem>
-      <ElFormItem :label="t('appointments.timeSlot')" required>
-        <ElSelect
-          v-model="form.time"
-          :placeholder="t('appointments.selectTimeSlot')"
-          style="width: 100%;"
-          :class="{ 'is-error': createSubmitAttempted && !form.time }"
-        >
-          <ElOption
-            v-for="slot in slotOptions"
-            :key="slot.time"
-            :label="slot.label"
-            :value="slot.time"
-            :disabled="slot.blocked"
-          />
-        </ElSelect>
+      <ElFormItem :label="t('appointments.pickSlot')" required>
+        <div class="slot-grid" :class="{ 'is-error': createSubmitAttempted && !form.time }">
+          <template v-if="slotOptions.length">
+            <button
+              v-for="slot in slotOptions"
+              :key="slot.time"
+              type="button"
+              class="slot-chip"
+              :class="[`slot-chip--${slot.state}`, { 'slot-chip--selected': form.time === slot.time }]"
+              :disabled="slot.state !== 'available'"
+              @click="form.time = slot.time"
+            >
+              <span class="slot-chip__time">{{ slot.time }}</span>
+              <span v-if="slot.state === 'booked'" class="slot-chip__tag">{{ t('appointments.slotBooked') }}</span>
+              <span v-else-if="slot.state === 'unavailable'" class="slot-chip__tag">{{ t('appointments.slotOff') }}</span>
+            </button>
+          </template>
+          <p v-else class="slot-empty">{{ form.doctor && form.date ? t('appointments.noSlotsForDay') : t('appointments.selectDoctorFirst') }}</p>
+        </div>
       </ElFormItem>
       <ElFormItem :label="t('appointments.reason')">
         <ElInput v-model="form.reason" type="textarea" :rows="3" :placeholder="t('appointments.reason')" />
       </ElFormItem>
     </ElForm>
-
-    <div class="slot-hint-card">
-      <p>{{ t('appointments.bookedCountHint') }}</p>
-      <ul>
-        <li v-for="slot in slotOptions" :key="slot.time">
-          <span>{{ slot.time }}</span>
-          <span>{{ slot.blocked ? t('appointments.unavailableBySchedule') : t('appointments.bookedCount', { count: slot.booked }) }}</span>
-        </li>
-      </ul>
-    </div>
 
     <template #footer>
       <ElButton @click="closeDialog">{{ t('common.cancel') }}</ElButton>
@@ -115,24 +113,19 @@ const closeDialog = () => {
 </template>
 
 <style scoped>
-.slot-hint-card {
-  margin-top: 8px;
-  padding: 12px;
-  background: var(--el-fill-color-light, #f5f7fa);
-  border-radius: 4px;
-  font-size: 13px;
+.slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; width: 100%; }
+.slot-grid.is-error { outline: 1px solid var(--danger-text); outline-offset: 4px; border-radius: 8px; }
+.slot-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 6px; border-radius: var(--radius-control, 10px);
+  border: 1px solid var(--line); background: #fff; cursor: pointer;
+  font-size: 13px; color: var(--primary); transition: all .15s ease;
 }
-.slot-hint-card ul {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 4px;
-}
-.slot-hint-card li {
-  display: flex;
-  justify-content: space-between;
-  padding: 2px 0;
-}
+.slot-chip--available:hover { border-color: var(--primary); background: var(--primary-soft); }
+.slot-chip--selected { background: var(--primary); border-color: var(--primary); color: #fff; }
+.slot-chip--booked { background: var(--status-pending-bg); border-color: transparent; color: var(--status-pending-text); cursor: not-allowed; }
+.slot-chip--unavailable { background: var(--status-neutral-bg); border-color: transparent; color: var(--muted); cursor: not-allowed; }
+.slot-chip__tag { font-size: 10px; }
+.slot-empty { color: var(--muted); font-size: 13px; margin: 4px 0; }
+.locked-field { height: 32px; display: flex; align-items: center; padding: 0 10px; border-radius: var(--radius-control, 10px); background: var(--primary-soft); color: var(--primary); font-size: 13px; }
 </style>
