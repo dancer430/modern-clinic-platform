@@ -25,10 +25,21 @@ class AppointmentPagination(PageNumberPagination):
     max_page_size = 50
 
 
+class AppointmentAccessPermission(permissions.IsAuthenticated):
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+        if view.action in ("list", "retrieve"):
+            return True
+        # Operators have read-only access; all other authenticated roles may attempt writes
+        # (service layer enforces finer-grained rules, e.g. patients only for themselves)
+        return request.user.role != User.Role.OPERATOR
+
+
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment._default_manager.all()
     serializer_class = AppointmentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AppointmentAccessPermission]
     pagination_class = AppointmentPagination
 
     def get_queryset(self):
@@ -63,7 +74,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
         queryset = queryset.order_by("-appointment_date", "-appointment_time", "-id")
 
-        if user.role == User.Role.ADMIN:
+        if user.role in (User.Role.ADMIN, User.Role.OPERATOR):
             return queryset
         if user.role == User.Role.DOCTOR:
             return queryset.filter(doctor=user)
