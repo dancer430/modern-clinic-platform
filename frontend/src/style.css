@@ -392,7 +392,7 @@ button:disabled {
   color: #95a3c2;
 }
 
-.filters input:not(.el-input__inner):not(.el-range-input):focus,
+.filters input:not(.el-input__inner):not(.el-range-input):not(.el-select__input):focus,
 .filters select:focus {
   outline: none;
   border-color: #3f67ea;
