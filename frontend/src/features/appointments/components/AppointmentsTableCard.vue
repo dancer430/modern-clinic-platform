@@ -50,6 +50,7 @@ const emit = defineEmits<{
             </ElButton>
             <template v-if="row.status === 'pending'">
               <ElButton
+                v-if="canManage"
                 type="primary"
                 plain
                 round
@@ -66,6 +67,7 @@ const emit = defineEmits<{
             </template>
             <template v-else-if="row.status === 'confirmed'">
               <ElButton
+                v-if="canManage"
                 type="success"
                 plain
                 round

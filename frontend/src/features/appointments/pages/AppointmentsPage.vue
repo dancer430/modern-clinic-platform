@@ -25,8 +25,12 @@ const openDetail = (row: AppointmentItem) => {
   detailVisible.value = true
 }
 
+const isOperator = computed(() => authStore.user?.user_type === 'operator')
+
 const pageTitle = computed(() =>
-  authStore.user?.user_type === 'admin' ? t('appointments.titleManage') : t('appointments.titleMine')
+  authStore.user?.user_type === 'admin' || isOperator.value
+    ? t('appointments.titleManage')
+    : t('appointments.titleMine')
 )
 
 const canManage = computed(() => authStore.isAdmin || authStore.isDoctor)
@@ -85,7 +89,7 @@ const {
     <section class="toolbar">
       <div class="page-header">
         <h2>{{ pageTitle }}</h2>
-        <p>{{ t('appointments.slotsHint') }}</p>
+        <p v-if="!isOperator">{{ t('appointments.slotsHint') }}</p>
       </div>
       <ElButton v-if="canManage" type="primary" @click="openCreate">{{ t('appointments.newAppointment') }}</ElButton>
     </section>
