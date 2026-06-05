@@ -64,6 +64,13 @@ export const en = {
     unavailableBySchedule: 'Unavailable by schedule',
     bookedCount: '{count} booked',
     create: 'Create',
+
+    // Slot grid
+    slotBooked: 'Booked',
+    slotOff: 'Off',
+    pickSlot: 'Pick a time slot',
+    noSlotsForDay: 'No bookable slots for this day — open slots in the schedule first.',
+    selectDoctorFirst: 'Select a doctor and date to see available slots.',
   },
 }
 
@@ -133,5 +140,12 @@ export const zh = {
     unavailableBySchedule: '排班不可约',
     bookedCount: '已约 {count} 人',
     create: '创建',
+
+    // Slot grid
+    slotBooked: '已约',
+    slotOff: '停诊',
+    pickSlot: '选择时段',
+    noSlotsForDay: '该日无可约时段,请先在排班开放时段。',
+    selectDoctorFirst: '请先选择医生和日期以查看可约时段。',
   },
 }
