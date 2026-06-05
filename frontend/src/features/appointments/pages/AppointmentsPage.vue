@@ -52,6 +52,7 @@ const {
   createAppointment,
   createSubmitAttempted,
   displayName,
+  doctorFilter,
   doctors,
   filtered,
   form,
@@ -66,10 +67,10 @@ const {
   openCreate,
   page,
   pageSize,
+  patientFilter,
   patients,
   removeCompleteAttachment,
   resetListFilters,
-  search,
   setToday,
   showCancelDialog,
   showCompleteDialog,
@@ -95,10 +96,14 @@ const {
     </section>
 
     <AppointmentsFilters
-      :search="search"
+      :doctor-id="doctorFilter"
+      :patient-id="patientFilter"
+      :doctors="doctors"
+      :patients="patients"
       :status="status"
       :date="dateFilter"
-      @update:search="search = $event"
+      @update:doctor-id="doctorFilter = $event"
+      @update:patient-id="patientFilter = $event"
       @update:status="status = $event"
       @update:date="dateFilter = $event"
       @search="applyListFilters"

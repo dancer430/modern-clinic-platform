@@ -79,6 +79,8 @@ export interface AppointmentQueryParams {
   page_size: number
   status?: AppointmentStatus
   q?: string
+  doctor?: number
+  patient?: number
   date?: string
 }
 
